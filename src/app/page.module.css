@@ -1,0 +1,116 @@
+.bg {
+  min-height: 100vh;
+  background: #6e6e6e; /* 바깥 회색 */
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.shell {
+  width: min(1200px, 100%);
+  background: #ffffff; /* 안쪽 흰 컨테이너 */
+  padding: 28px 28px 42px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: 56px;
+  align-items: start;
+  padding-top: 44px;
+}
+
+.heroLeft {
+  min-height: 520px;
+}
+
+.heroRight {
+  padding-top: 24px;
+}
+
+.title {
+  font-size: 36px;
+  line-height: 1.15;
+  margin: 0 0 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #111;
+}
+
+.subtitle {
+  margin: 0 0 28px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+}
+
+.ctaRow {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.04s ease, background 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btnPrimary {
+  background: #262626;
+  color: #fff;
+  border: 1px solid #262626;
+}
+
+.btnPrimary:hover {
+  background: #1f1f1f;
+  border-color: #1f1f1f;
+}
+
+.btnGhost {
+  background: #fff;
+  color: #262626;
+  border: 1px solid #cfcfcf;
+}
+
+.btnGhost:hover {
+  border-color: #b5b5b5;
+}
+
+@media (max-width: 900px) {
+  .bg {
+    padding: 16px;
+  }
+
+  .shell {
+    padding: 20px 18px 28px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-top: 28px;
+  }
+
+  .heroLeft {
+    min-height: auto;
+  }
+
+  .heroRight {
+    padding-top: 0;
+  }
+}

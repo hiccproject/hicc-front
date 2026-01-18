@@ -1,0 +1,52 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.box {
+  width: 16px;
+  height: 12px;
+  border: 1.5px solid #111;
+  display: inline-block;
+}
+
+.brand {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #111;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.navLink {
+  font-size: 13px;
+  color: #111;
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+}
+
+.navLink:hover {
+  border-bottom-color: #111;
+}
