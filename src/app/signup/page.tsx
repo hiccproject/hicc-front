@@ -112,7 +112,7 @@ export default function SignupPage() {
               </div>
 
               <div className={styles.helper}>
-                {fullEmail ? `입력된 이메일: ${fullEmail}` : "이메일을 입력해주세요."}
+                {fullEmail ? `입력된 이메일: ${fullEmail}` : ""}
               </div>
             </div>
 
@@ -128,7 +128,7 @@ export default function SignupPage() {
             </div>
 
             <div className={styles.row}>
-              <label className={styles.label}>비밀번호</label>
+              <label className={styles.label}></label>
               <input
                 className={styles.input}
                 type="password"

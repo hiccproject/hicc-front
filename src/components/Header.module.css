@@ -50,3 +50,50 @@
 .navLink:hover {
   border-bottom-color: #111;
 }
+
+.profileContainer {
+  position: relative; /* 드롭다운 위치 기준 */
+}
+
+.profileCircle {
+  width: 32px;
+  height: 32px;
+  background-color: #737373; /* 이미지의 회색 원 스타일 */
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 12px); /* 프로필 아이콘 아래 배치 */
+  right: 0;
+  width: 100px;
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.dropdownItem {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #111;
+  text-decoration: none;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdownItem:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdownItem:first-child {
+  border-bottom: 1px solid #f0f0f0;
+}

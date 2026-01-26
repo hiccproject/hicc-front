@@ -1,0 +1,157 @@
+.bg {
+  min-height: 100vh;
+  background: #6e6e6e;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.shell {
+  width: min(1200px, 100%);
+  background: #ffffff;
+  padding: 28px 28px 40px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.container {
+  margin-top: 40px;
+}
+
+/* 프로필 공통 요소 */
+.avatarCircle {
+  width: 120px;
+  height: 120px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.name { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
+.bio { font-size: 14px; margin-bottom: 20px; letter-spacing: 2px; }
+
+.tagRow { display: flex; gap: 8px; margin-bottom: 24px; }
+.tag {
+  background: #333;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.linkInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linkField {
+  background: #fff;
+  height: 32px;
+  width: 240px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: #888;
+}
+
+/* 우측 액션 버튼 스택 */
+.actionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actionBtn {
+  width: 80px;
+  height: 32px;
+  background: #fff;
+  border: 1px solid #ddd;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.actionBtn.active {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.contentCard {
+  background: #f0f0f0;
+  border-radius: 4px;
+  min-height: 160px;
+}
+
+/* --- 테마별 레이아웃 정의 (이미지 참고) --- */
+
+/* Theme 01: 가로형 */
+.theme01 .profileSection {
+  background: #e0e0e0;
+  padding: 60px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.theme01 .profileContent {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.theme01 .contentSection {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* Theme 02: 사이드바형 */
+.theme02 {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+}
+
+.theme02 .profileSection {
+  background: #e0e0e0;
+  padding: 60px 32px;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.theme02 .contentSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.theme02 .contentCard {
+  height: 220px;
+}
+
+/* Theme 03: 절반 분할형 */
+.theme03 {
+  display: flex;
+}
+
+.theme03 .profileSection {
+  flex: 1;
+  background: #e0e0e0;
+  padding: 80px 40px;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.theme03 .contentSection {
+  flex: 1.5;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
