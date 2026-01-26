@@ -1,9 +1,23 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import RandomCardWall from "@/components/RandomCardWall";
 import styles from "./page.module.css";
 import Link from "next/link";
 
 export default function HomePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setIsLoggedIn(Boolean(token));
+  }, []);
+
+  const primaryCta = isLoggedIn
+    ? { href: "/create", label: "명함 만들기" }
+    : { href: "/signup", label: "가입하기" };
+    
   return (
     <div className={styles.bg}>
       <main className={styles.shell}>
@@ -26,8 +40,11 @@ export default function HomePage() {
             </p>
 
             <div className={styles.ctaRow}>
-              <Link href="/create" className={`${styles.btn} ${styles.btnPrimary}`}>
-                명함 만들기
+              <Link
+                href={primaryCta.href}
+                className={`${styles.btn} ${styles.btnPrimary}`}
+              >
+                {primaryCta.label}
               </Link>
               <Link href="/explore" className={`${styles.btn} ${styles.btnGhost}`}>
                 둘러보기
