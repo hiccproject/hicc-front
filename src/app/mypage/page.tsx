@@ -1,84 +1,190 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
-import Link from "next/link";
 import styles from "./mypage.module.css";
 
 export default function MyPage() {
+  const router = useRouter();
+  
+  const [userInfo, setUserInfo] = useState({
+    name: "홍길동",
+    email: "hgd1234@gmail.com",
+    password: "qwer", 
+  });
+
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [tempValue, setTempValue] = useState("");
+  
+  const [passwordData, setPasswordData] = useState({
+    current: "",
+    new: "",
+  });
+
+  const startEdit = (field: string, value: string) => {
+    setEditingField(field);
+    if (field === "password") {
+      setPasswordData({ current: "", new: "" });
+    } else {
+      setTempValue(value);
+    }
+  };
+
+  const handleSave = (e?: React.FormEvent) => {
+    if (e) e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
+
+    if (editingField === "password") {
+      if (passwordData.current !== userInfo.password) {
+        alert("현재 비밀번호가 일치하지 않습니다.");
+        return;
+      }
+      if (passwordData.new.length < 8) {
+        alert("새 비밀번호는 8자 이상이어야 합니다.");
+        return;
+      }
+      setUserInfo({ ...userInfo, password: passwordData.new });
+    } else if (editingField) {
+      setUserInfo({ ...userInfo, [editingField]: tempValue });
+    }
+
+    setEditingField(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    alert("로그아웃 되었습니다.");
+    router.push("/");
+  };
+
+  const handleDeleteAccount = () => {
+    if (confirm("정말로 계정을 삭제하시겠습니까?")) {
+      localStorage.removeItem("accessToken");
+      alert("계정이 삭제되었습니다.");
+      router.push("/");
+    }
+  };
+
   return (
     <div className={styles.bg}>
       <main className={styles.shell}>
         <Header />
 
-        <div className={styles.pageTitleArea}>
-          <h1 className={styles.pageTitle}>마이페이지</h1>
-        </div>
-
-        <section className={styles.container}>
-          {/* 왼쪽 섹션: 상세 프로필 카드 */}
-          <aside className={styles.profileCard}>
-            <div className={styles.avatarCircle} />
-            <h2 className={styles.profileName}>홍길동</h2>
-            <p className={styles.profileBio}>한줄소개 or 요약</p>
-
-            <ul className={styles.detailList}>
-              <li className={styles.detailItem}>
-                <span className={styles.iconBox} /> 분야
-              </li>
-              <li className={styles.detailItem}>
-                <span className={styles.iconBox} /> 위치
-              </li>
-              <li className={styles.detailItem}>
-                <span className={styles.iconBox} /> 010-1234-1234
-              </li>
-              <li className={styles.detailItem}>
-                <span className={styles.iconBox} /> hgd@gmail.com
-              </li>
-            </ul>
-
-            <button className={styles.editBtn}>프로필 정보 편집</button>
+        <div className={styles.body}>
+          <aside className={styles.sidebar}>
+            <div className={styles.profileCircle} />
+            <h2 className={styles.userName}>{userInfo.name}</h2>
+            <p className={styles.userEmail}>{userInfo.email}</p>
           </aside>
 
-          {/* 오른쪽 섹션: 통계 및 명함 관리 */}
-          <div className={styles.dashboard}>
-            {/* 조회 통계 */}
-            <article className={styles.statsBox}>
-              <div className={styles.statsHeader}>
-                <h3 className={styles.boxTitle}>조회 통계</h3>
-                <span className={styles.statsCount}>0</span>
-              </div>
-              <div className={styles.graphArea}>
-                <svg viewBox="0 0 400 100" className={styles.svgGraph}>
-                  <path
-                    d="M0,80 L80,85 L160,50 L240,40 L320,60 L400,80"
-                    fill="none"
-                    stroke="#555"
-                    strokeWidth="1.5"
-                  />
-                </svg>
-              </div>
-            </article>
-
-            {/* 내 명함 관리 (클릭 시 지원자 포폴 페이지로 이동) */}
-            <Link href="/portfolio" className={styles.cardManageBox}>
-              <div className={styles.cardManageHeader}>
-                <h3 className={styles.boxTitle}>내 명함</h3>
-                <span className={styles.navArrow}>&gt;</span>
-              </div>
+          <section className={styles.content}>
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>개인정보</h3>
               
-              <div className={styles.tagRow}>
-                <span className={styles.tag}>태그 01</span>
-                <span className={styles.tag}>태그 01</span>
-                <span className={styles.tag}>태그 01</span>
+              {/* 이름 수정 */}
+              <div className={styles.infoItem}>
+                {editingField === "name" ? (
+                  <form className={styles.editBlock} onSubmit={handleSave}>
+                    <input 
+                      className={styles.inputBar} 
+                      value={tempValue} 
+                      onChange={(e) => setTempValue(e.target.value)}
+                      autoFocus 
+                    />
+                    <div className={styles.editActions}>
+                      <button type="submit" className={styles.saveBtn}>저장</button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.labelName}>이름</span>
+                      <span className={styles.labelValue}>{userInfo.name}</span>
+                    </div>
+                    <button className={styles.editBtn} onClick={() => startEdit("name", userInfo.name)}>수정</button>
+                  </>
+                )}
               </div>
 
-              <div className={styles.linkList}>
-                <div className={styles.linkItem}>링크</div>
-                <div className={styles.linkItem}>링크</div>
+              {/* 이메일 수정 */}
+              <div className={styles.infoItem}>
+                {editingField === "email" ? (
+                  <form className={styles.editBlock} onSubmit={handleSave}>
+                    <input 
+                      className={styles.inputBar} 
+                      value={tempValue} 
+                      onChange={(e) => setTempValue(e.target.value)} 
+                      autoFocus
+                    />
+                    <div className={styles.editActions}>
+                      <button type="submit" className={styles.saveBtn}>저장</button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.labelName}>이메일</span>
+                      <span className={styles.labelValue}>{userInfo.email}</span>
+                    </div>
+                    <button className={styles.editBtn} onClick={() => startEdit("email", userInfo.email)}>수정</button>
+                  </>
+                )}
               </div>
-            </Link>
-          </div>
-        </section>
+
+              {/* 비밀번호 수정 */}
+              <div className={styles.infoItem}>
+                {editingField === "password" ? (
+                  <form className={styles.editBlock} onSubmit={handleSave}>
+                    <input 
+                      type="password"
+                      className={styles.inputBar} 
+                      placeholder="현재 비밀번호 입력"
+                      value={passwordData.current}
+                      onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                      autoFocus
+                    />
+                    <input 
+                      type="password"
+                      className={styles.inputBar} 
+                      placeholder="새 비밀번호 입력"
+                      value={passwordData.new}
+                      onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                    />
+                    <div className={styles.editActions}>
+                      <button type="submit" className={styles.saveBtn}>저장</button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.labelName}>비밀번호</span>
+                      <span className={styles.labelValue}>********</span>
+                    </div>
+                    <button className={styles.editBtn} onClick={() => startEdit("password", "")}>수정</button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>계정 관리</h3>
+              <div className={styles.infoItem}>
+                <div className={styles.infoLabel}><span className={styles.labelName}>로그아웃</span></div>
+                <button className={styles.editBtn} onClick={handleLogout}>로그아웃</button>
+              </div>
+              <div className={styles.infoItem}>
+                <div className={styles.infoLabel}>
+                  <span className={styles.labelName}>계정 삭제</span>
+                  <span className={styles.labelValue}>영구적으로 계정을 삭제합니다.</span>
+                </div>
+                <button className={`${styles.editBtn} ${styles.deleteBtn}`} onClick={handleDeleteAccount}>삭제</button>
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
     </div>
   );

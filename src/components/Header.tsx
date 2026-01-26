@@ -70,6 +70,9 @@ export default function Header() {
                 <Link href="/mypage" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>
                   마이페이지
                 </Link>
+                <Link href="/portfolio" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>
+                  포트폴리오
+                </Link>
                 <button 
                   className={styles.dropdownItem}
                   onClick={handleLogout} // 수정된 로그아웃 함수 연결
