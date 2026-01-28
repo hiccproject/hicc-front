@@ -5,24 +5,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 import Header from "../../components/Header";
+import { loginMember, requestGoogleLogin } from "@/lib/api/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const performLogin = (targetId: string) => {
-    localStorage.setItem("accessToken", "dummy-token-1234");
-    alert(`로그인 성공! ${targetId}님 환영합니다.`);
-    router.push("/");
-  };
-
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (id && password) {
-      performLogin(id);
-    } else {
+
+    if (!id || !password) {
       alert("아이디와 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await loginMember({ loginId: id, password });
+      alert(`로그인 성공! ${id}님 환영합니다.`);
+      router.push("/");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "로그인에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    try {
+      await requestGoogleLogin();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "구글 로그인에 실패했습니다.");
     }
   }
 
@@ -52,8 +67,8 @@ export default function LoginPage() {
               />
             </div>
 
-            <button type="submit" className={styles.btnPrimary}>
-              로그인
+            <button type="submit" className={styles.btnPrimary} disabled={isSubmitting}>
+              {isSubmitting ? "로그인 중..." : "로그인"}
             </button>
 
             <div className={styles.findLinks}>
@@ -68,7 +83,7 @@ export default function LoginPage() {
             <button
               type="button"
               className={styles.btnGoogle}
-              onClick={() => alert("Google 로그인 시도")}
+              onClick={handleGoogleLogin}
             >
               <img
                 src="/google.png"

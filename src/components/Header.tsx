@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // 리다이렉트를 위해 추가
 import styles from "./Header.module.css";
+import { clearTokens, getAccessToken } from "@/lib/auth/tokens";
 
 export default function Header() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function Header() {
 
   // 2. 컴포넌트 마운트 시 토큰 존재 여부를 확인하여 로그인 상태를 설정합니다.
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     if (token) {
       setIsLoggedIn(true);
     }
@@ -37,7 +38,7 @@ export default function Header() {
 
   // 3. 로그아웃 함수: 토큰을 삭제하고 상태를 변경합니다.
   const handleLogout = () => {
-    localStorage.removeItem("accessToken"); // 토큰 삭제
+    clearTokens();
     setIsLoggedIn(false);
     setIsDropdownOpen(false);
     alert("로그아웃 되었습니다.");

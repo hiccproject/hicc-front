@@ -6,6 +6,7 @@ import Link from "next/link";
 import styles from "./signup.module.css";
 import Header from "../../components/Header";
 import Modal from "../../components/Modal";
+import { signupMember } from "@/lib/api/auth";
 
 type DomainOption = "naver.com" | "nate.com" | "hanmail.net" | "custom";
 
@@ -21,6 +22,8 @@ export default function SignupPage() {
   const [agreePrivacy, setAgreePrivacy] = useState(false);
 
   const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedDomain = domain === "custom" ? customDomain : domain;
 
@@ -41,13 +44,19 @@ export default function SignupPage() {
     agreeTerms &&
     agreePrivacy;
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
 
-    alert(
-      `회원가입 제출(임시)\n\n이름: ${name}\n이메일: ${fullEmail}\n약관동의: ${agreeTerms}\n개인정보동의: ${agreePrivacy}`
-    );
+    setIsSubmitting(true);
+    try {
+      await signupMember({ name, email: fullEmail, password });
+      alert("회원가입이 완료되었습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "회원가입에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -194,9 +203,9 @@ export default function SignupPage() {
               <button
                 type="submit"
                 className={`${styles.btn} ${styles.btnPrimary}`}
-                disabled={!canSubmit}
+                disabled={!canSubmit || isSubmitting}
               >
-                완료
+                {isSubmitting ? "가입 중..." : "완료"}
               </button>
             </div>
           </form>
