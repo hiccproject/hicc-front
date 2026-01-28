@@ -20,6 +20,7 @@ async function refreshAccessToken() {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify({ refreshToken }),
     cache: "no-store",
   });
@@ -47,6 +48,7 @@ export async function apiFetch<T>(url: string, options: ApiFetchOptions = {}): P
   let res = await fetch(buildApiUrl(url), {
     ...rest,
     headers: requestHeaders,
+    credentials: "include",
     cache: "no-store",
   });
 
@@ -61,6 +63,7 @@ export async function apiFetch<T>(url: string, options: ApiFetchOptions = {}): P
           ...(nextToken ? { Authorization: `Bearer ${nextToken}` } : {}),
           ...(headers || {}),
         },
+        credentials: "include",
         cache: "no-store",
       });
     }

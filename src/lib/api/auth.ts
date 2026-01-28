@@ -12,15 +12,6 @@ export type SignupPayload = {
   password: string;
 };
 
-export type GoogleLoginResponse = {
-  redirectUrl?: string;
-  url?: string;
-  data?: {
-    redirectUrl?: string;
-    url?: string;
-  };
-};
-
 export type GoogleLoginTokenResponse = {
   code?: string;
   message?: string;
@@ -41,6 +32,7 @@ export async function loginMember(payload: LoginPayload) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(payload),
     cache: "no-store",
   });
@@ -62,6 +54,7 @@ export async function signupMember(payload: SignupPayload) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(payload),
     cache: "no-store",
   });
@@ -76,24 +69,6 @@ export async function signupMember(payload: SignupPayload) {
 }
 
 export async function requestGoogleLogin() {
-  const res = await fetch(buildApiUrl("/api/v1/auth/login"), {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error("구글 로그인 요청에 실패했습니다.");
-  }
-
-  const data = (await parseJsonSafe(res)) as GoogleLoginResponse | null;
-  const redirectUrl =
-    data?.redirectUrl || data?.url || data?.data?.redirectUrl || data?.data?.url;
-
-  if (redirectUrl) {
-    window.location.href = redirectUrl;
-    return;
-  }
-
   window.location.href = buildApiUrl("/api/v1/auth/login");
 }
 
@@ -103,6 +78,7 @@ export async function agreeGoogleSignup(payload: TokenPair & { agreed: boolean }
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(payload),
     cache: "no-store",
   });
@@ -125,6 +101,7 @@ export async function exchangeGoogleLoginCode(payload: {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(payload),
     cache: "no-store",
   });
