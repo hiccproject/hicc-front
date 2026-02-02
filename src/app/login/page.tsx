@@ -9,22 +9,22 @@ import { loginMember, requestGoogleLogin } from "@/lib/api/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [id, setId] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!id || !password) {
+    if (!loginId || !password) {
       alert("아이디와 비밀번호를 입력해주세요.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await loginMember({ loginId: id, password });
-      alert(`로그인 성공! ${id}님 환영합니다.`);
+      await loginMember({ loginId, password });
+      alert(`로그인 성공! ${loginId}님 환영합니다.`);
       router.push("/");
     } catch (error) {
       alert(error instanceof Error ? error.message : "로그인에 실패했습니다.");
@@ -54,9 +54,9 @@ export default function LoginPage() {
               <input
                 type="text"
                 className={styles.input}
-                value={id}
+                value={loginId}
                 placeholder="아이디를 입력해주세요."
-                onChange={(e) => setId(e.target.value)}
+                onChange={(e) => setLoginId(e.target.value)}
               />
               <input
                 type="password"
