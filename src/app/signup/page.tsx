@@ -55,6 +55,7 @@ export default function SignupPage() {
         email: fullEmail,
         password,
         passwordConfirm: password2,
+        termsAgreed: agreeTerms,
       });
       alert("회원가입이 완료되었습니다.");
     } catch (error) {

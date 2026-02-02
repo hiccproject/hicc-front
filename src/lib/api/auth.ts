@@ -11,6 +11,7 @@ export type SignupPayload = {
   email: string;
   password: string;
   passwordConfirm: string;
+  termsAgreed: boolean;
 };
 
 export type GoogleLoginTokenResponse = {
