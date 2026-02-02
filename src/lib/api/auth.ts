@@ -2,7 +2,7 @@ import { buildApiUrl } from "@/lib/api/config";
 import { extractTokens, setTokens, TokenPair } from "@/lib/auth/tokens";
 
 export type LoginPayload = {
-  loginId: string;
+  email: string;
   password: string;
 };
 
