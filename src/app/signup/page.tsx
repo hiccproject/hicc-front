@@ -50,7 +50,12 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
     try {
-      await signupMember({ name, email: fullEmail, password });
+      await signupMember({
+        name,
+        email: fullEmail,
+        password,
+        passwordConfirm: password2,
+      });
       alert("회원가입이 완료되었습니다.");
     } catch (error) {
       alert(error instanceof Error ? error.message : "회원가입에 실패했습니다.");
