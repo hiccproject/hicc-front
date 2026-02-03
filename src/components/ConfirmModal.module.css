@@ -1,0 +1,35 @@
+.message {
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 버튼 영역 */
+.actions {
+  display: flex;
+  justify-content: center; /* 중앙 정렬 */
+  gap: 12px;
+  width: 100%;
+}
+
+/* 버튼 공통 */
+.btn {
+  width: 80px; /* 동일한 크기 */
+  padding: 12px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* 아니요 */
+.cancel {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+/* 예 */
+.confirm {
+  background: #111;
+  color: #fff;
+  border: none;
+}

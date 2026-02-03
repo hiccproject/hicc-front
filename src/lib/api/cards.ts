@@ -1,9 +1,10 @@
 import type { Card } from "@/types/card";
-// import { apiFetch } from "@/lib/api/client";
+import { apiFetch } from "@/lib/api/client";
 
+//랜덤 명함 조회 (더미 데이터 유지) ---
 export type HomeCardsResponse = {
-  myCard: Card | null; // 로그인 시 우선 노출
-  cards: Card[];       // 공개/전체 랜덤 카드들
+  myCard: Card | null;
+  cards: Card[];
 };
 
 function isLoggedInByToken(): boolean {
@@ -11,15 +12,8 @@ function isLoggedInByToken(): boolean {
   return !!localStorage.getItem("accessToken");
 }
 
-/**
- * ✅ 메인 페이지 랜덤 명함 영역에서 필요한 데이터
- * - 명함 API가 아직 미정이므로: 지금은 MOCK로 반환
- * - 백엔드 확정되면: 아래 REAL API 섹션으로 교체 (이 파일만 변경)
- */
 export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
-  // -------------------------------
-  // MOCK 데이터 (지금 당장 UI 개발용)
-  // -------------------------------
+  // MOCK 데이터
   const mockMyCard: Card = {
     id: "me",
     name: "내 명함",
@@ -45,20 +39,42 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
     myCard: isLoggedInByToken() ? mockMyCard : null,
     cards: shuffled,
   };
+}
 
-  // -------------------------------
-  // REAL API 교체 예시
-  // -------------------------------
-  // A안) 분리형
-  // const cards = await apiFetch<Card[]>(`/api/cards/random?limit=${limit}`);
-  // let myCard: Card | null = null;
-  // try {
-  //   myCard = await apiFetch<Card>(`/api/cards/me`, { auth: true });
-  // } catch {
-  //   myCard = null;
-  // }
-  // return { myCard, cards };
-  //
-  // B안) 통합형
-  // return apiFetch<HomeCardsResponse>(`/api/home/cards?limit=${limit}`, { auth: true });
+// --- [추가 기능] 명함 생성 API 연결 ---
+
+export type PortfolioData = {
+  category: string;
+  subCategory: string;
+  profileImg?: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  projects: { projectName: string; projectSummary: string; projectLink?: string }[];
+  summaryIntro: string;
+  layoutType: "CARD" | "LIST" | "GRID";
+};
+
+/**
+ * 단계별 포트폴리오 저장 함수
+ * @param step 현재 단계 (1~5)
+ * @param body 해당 단계의 데이터
+ * @param portfolioId 1단계 이후부터 필수인 ID
+ */
+export async function savePortfolioStep(
+  step: number,
+  body: any,
+  portfolioId?: number | null
+) {
+  const params = new URLSearchParams({ step: step.toString() });
+  if (portfolioId) {
+    params.append("portfolioId", portfolioId.toString());
+  }
+
+  // 예: POST /api/portfolios?step=1
+  return apiFetch<{ data: number }>(`/api/portfolios?${params.toString()}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    auth: true, // 토큰 자동 포함
+  });
 }

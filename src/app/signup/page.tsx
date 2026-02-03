@@ -1,19 +1,22 @@
+// src/app/signup/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-
+import { useRouter } from "next/navigation";
 import styles from "./signup.module.css";
 import Header from "../../components/Header";
 import Modal from "../../components/Modal";
+import ConfirmModal from "../../components/ConfirmModal";
 import { signupMember } from "@/lib/api/auth";
 
-type DomainOption = "naver.com" | "nate.com" | "hanmail.net" | "custom";
+type DomainOption = "gmail.com" | "naver.com" | "nate.com" | "hanmail.net" | "custom";
 
 export default function SignupPage() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [emailId, setEmailId] = useState("");
-  const [domain, setDomain] = useState<DomainOption>("naver.com");
+  const [domain, setDomain] = useState<DomainOption>("gmail.com");
   const [customDomain, setCustomDomain] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -24,6 +27,9 @@ export default function SignupPage() {
   const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ✅ 취소 확인(ConfirmModal)
+  const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
 
   const selectedDomain = domain === "custom" ? customDomain : domain;
 
@@ -57,7 +63,9 @@ export default function SignupPage() {
         passwordConfirm: password2,
         termsAgreed: agreeTerms,
       });
+
       alert("회원가입이 완료되었습니다.");
+      router.push("/"); // ✅ 가입 완료 후 홈으로 이동
     } catch (error) {
       alert(error instanceof Error ? error.message : "회원가입에 실패했습니다.");
     } finally {
@@ -119,6 +127,7 @@ export default function SignupPage() {
                     if (next !== "custom") setCustomDomain("");
                   }}
                 >
+                  <option value="gmail.com">gmail.com</option>
                   <option value="naver.com">naver.com</option>
                   <option value="nate.com">nate.com</option>
                   <option value="hanmail.net">hanmail.net</option>
@@ -136,7 +145,7 @@ export default function SignupPage() {
               <input
                 className={styles.input}
                 type="password"
-                placeholder="비밀번호를 입력해주세요. (8자 이상)"
+                placeholder="비밀번호를 입력해주세요. (대문자/소문자/숫자/특수문자 포함 8~20자)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -202,9 +211,14 @@ export default function SignupPage() {
             </div>
 
             <div className={styles.actions}>
-              <Link href="/" className={`${styles.btn} ${styles.btnGhost}`}>
+              {/* ✅ 취소 -> ConfirmModal 오픈 */}
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnGhost}`}
+                onClick={() => setOpenCancelConfirm(true)}
+              >
                 취소
-              </Link>
+              </button>
 
               <button
                 type="submit"
@@ -218,6 +232,7 @@ export default function SignupPage() {
         </section>
       </main>
 
+      {/* ✅ 이용약관/개인정보 모달 */}
       <Modal
         open={openModal !== null}
         title={openModal === "terms" ? "이용 약관" : "개인정보 수집 이용 동의"}
@@ -244,6 +259,18 @@ export default function SignupPage() {
           </div>
         )}
       </Modal>
+
+      {/* ✅ 취소 확인 ConfirmModal */}
+      <ConfirmModal
+        open={openCancelConfirm}
+        title="회원가입 취소"
+        message="정말 회원가입을 취소하시겠습니까?"
+        onConfirm={() => {
+          setOpenCancelConfirm(false);
+          router.push("/");
+        }}
+        onCancel={() => setOpenCancelConfirm(false)}
+      />
     </div>
   );
 }

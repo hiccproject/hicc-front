@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import styles from "./page.module.css";
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
 
   // 로그인 상태 확인 (기존 로직 유지)
   useEffect(() => {

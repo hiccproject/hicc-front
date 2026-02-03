@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import styles from "./Modal.module.css";
 
 export default function Modal({
@@ -7,11 +8,15 @@ export default function Modal({
   title,
   children,
   onClose,
+  footer,
+  showDefaultFooter = true,
 }: {
   open: boolean;
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  footer?: React.ReactNode;
+  showDefaultFooter?: boolean;
 }) {
   if (!open) return null;
 
@@ -28,9 +33,12 @@ export default function Modal({
         <div className={styles.body}>{children}</div>
 
         <div className={styles.footer}>
-          <button className={styles.ok} onClick={onClose}>
-            확인
-          </button>
+          {footer}
+          {!footer && showDefaultFooter && (
+            <button className={styles.ok} onClick={onClose}>
+              확인
+            </button>
+          )}
         </div>
       </div>
     </div>
