@@ -50,6 +50,16 @@ export function setStoredNameForEmail(email: string, name: string) {
   setStoredNameMap(map);
 }
 
+export function removeStoredNameForEmail(email: string) {
+  if (typeof window === "undefined") return;
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return;
+  const map = getStoredNameMap();
+  if (!(normalizedEmail in map)) return;
+  delete map[normalizedEmail];
+  setStoredNameMap(map);
+}
+
 export function getStoredNameForLogin(identifier: string) {
   if (typeof window === "undefined") return "";
   const normalizedIdentifier = identifier.trim().toLowerCase();

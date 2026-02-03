@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./mypage.module.css";
 import { clearTokens } from "@/lib/auth/tokens";
-import { clearStoredProfile, getStoredNameForLogin, getStoredProfile, setStoredNameForEmail, setStoredProfile } from "../../lib/auth/profile";
+import { changeMemberPassword, deleteMemberAccount } from "@/lib/api/auth";
+import {
+  clearStoredProfile,
+  getStoredNameForLogin,
+  getStoredProfile,
+  removeStoredNameForEmail,
+  setStoredNameForEmail,
+  setStoredProfile,
+} from "../../lib/auth/profile";
 
 export default function MyPage() {
   const router = useRouter();
@@ -44,7 +52,7 @@ export default function MyPage() {
     }
   };
 
-  const handleSave = (e?: React.FormEvent) => {
+  const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
 
     if (editingField === "password") {
@@ -56,12 +64,23 @@ export default function MyPage() {
         alert("새 비밀번호는 8자 이상이어야 합니다.");
         return;
       }
-      setPassword(passwordData.new);
-      setStoredProfile({
-        name,
-        email: emailId,
-        password: passwordData.new,
-      });
+      try {
+        await changeMemberPassword({
+          currentPassword: passwordData.current,
+          newPassword: passwordData.new,
+        });
+        setPassword(passwordData.new);
+        setStoredProfile({
+          name,
+          email: emailId,
+          password: passwordData.new,
+        });
+        setPasswordData({ current: "", new: "" });
+        alert("비밀번호가 변경되었습니다.");
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "비밀번호 변경에 실패했습니다.");
+        return;
+      }
     } else if (editingField === "name") {
       setName(tempValue);
       if (emailId) {
@@ -86,12 +105,20 @@ export default function MyPage() {
     router.push("/");
   };
 
-  const handleDeleteAccount = () => {
-    if (confirm("정말로 계정을 삭제하시겠습니까?")) {
+  const handleDeleteAccount = async () => {
+    if (!confirm("정말로 계정을 삭제하시겠습니까?")) return;
+
+    try {
+      await deleteMemberAccount();
+      if (emailId) {
+        removeStoredNameForEmail(emailId);
+      }
       clearTokens();
       clearStoredProfile();
       alert("계정이 삭제되었습니다.");
       router.push("/");
+       } catch (error) {
+      alert(error instanceof Error ? error.message : "계정 삭제에 실패했습니다.");
     }
   };
 

@@ -94,6 +94,48 @@ export async function resetMemberPassword(payload: {
   return data;
 }
 
+export async function changeMemberPassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const res = await fetch(buildApiUrl("/api/members/password"), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    const message = data?.message ?? "비밀번호 변경에 실패했습니다.";
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+export async function deleteMemberAccount() {
+  const res = await fetch(buildApiUrl("/api/members"), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    const message = data?.message ?? "계정 삭제에 실패했습니다.";
+    throw new Error(message);
+  }
+
+  return data;
+}
+
 export async function requestGoogleLogin() {
   window.location.href = buildApiUrl("/api/v1/auth/login");
 }
