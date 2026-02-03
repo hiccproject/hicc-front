@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 import Header from "../../components/Header";
 import { loginMember, requestGoogleLogin } from "@/lib/api/auth";
-import { setStoredProfile } from "../../lib/auth/profile";
+import { getStoredNameForLogin, getStoredProfile, setStoredProfile } from "../../lib/auth/profile";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,8 +25,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await loginMember({ email, password });
-      setStoredProfile({ name: "", email, password });
-      alert(`로그인 성공! ${email}님 환영합니다.`);
+      const storedProfile = getStoredProfile();
+      const resolvedName = getStoredNameForLogin(email) || storedProfile?.name?.trim() || "";
+      setStoredProfile({ name: resolvedName, email, password });
+      const greetingName = resolvedName ? `${resolvedName}님` : "회원님";
+      alert(`로그인 성공! ${greetingName} 환영합니다.`);
       router.push("/");
     } catch (error) {
       alert(error instanceof Error ? error.message : "로그인에 실패했습니다.");
@@ -57,7 +60,7 @@ export default function LoginPage() {
                 type="text"
                 className={styles.input}
                 value={email}
-                placeholder="아이디를 입력해주세요."
+                placeholder="이메일을 입력해주세요."
                 onChange={(e) => setemail(e.target.value)}
               />
               <input

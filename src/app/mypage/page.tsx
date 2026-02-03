@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./mypage.module.css";
 import { clearTokens } from "@/lib/auth/tokens";
-import { clearStoredProfile, getStoredProfile, setStoredProfile } from "../../lib/auth/profile";
+import { clearStoredProfile, getStoredNameForLogin, getStoredProfile, setStoredNameForEmail, setStoredProfile } from "../../lib/auth/profile";
 
 export default function MyPage() {
   const router = useRouter();
@@ -23,12 +23,13 @@ export default function MyPage() {
   });
 
   useEffect(() => {
-    const profile = getStoredProfile();
-    if (profile) {
-      setName(profile.name ?? "");
-      setEmailId(profile.email ?? "");
-      setPassword(profile.password ?? "");
-    }
+  const profile = getStoredProfile();
+  if (profile) {
+    const storedName = getStoredNameForLogin(profile.email ?? "");
+    setName(storedName || profile.name || "");
+    setEmailId(profile.email ?? "");
+    setPassword(profile.password ?? "");
+  }
   }, []);
 
   const startEdit = (field: string, value: string) => {
@@ -60,9 +61,15 @@ export default function MyPage() {
       });
     } else if (editingField === "name") {
       setName(tempValue);
+      if (emailId) {
+        setStoredNameForEmail(emailId, tempValue);
+      }
       setStoredProfile({ name: tempValue, email: emailId, password });
     } else if (editingField === "email") {
       setEmailId(tempValue);
+      if (name) {
+        setStoredNameForEmail(tempValue, name);
+      }
       setStoredProfile({ name, email: tempValue, password });
     }
 

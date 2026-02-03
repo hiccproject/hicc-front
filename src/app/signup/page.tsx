@@ -7,7 +7,7 @@ import styles from "./signup.module.css";
 import Header from "../../components/Header";
 import Modal from "../../components/Modal";
 import { signupMember } from "@/lib/api/auth";
-import { setStoredProfile } from "../../lib/auth/profile";
+import { setStoredNameForEmail, setStoredProfile } from "../../lib/auth/profile";
 
 type DomainOption = "naver.com" | "nate.com" | "hanmail.net" | "custom";
 
@@ -59,6 +59,7 @@ export default function SignupPage() {
         termsAgreed: agreeTerms,
       });
       setStoredProfile({ name, email: fullEmail, password });
+      setStoredNameForEmail(fullEmail, name);
       alert("회원가입이 완료되었습니다.");
     } catch (error) {
       alert(error instanceof Error ? error.message : "회원가입에 실패했습니다.");
