@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 import Header from "../../components/Header";
 import { loginMember, requestGoogleLogin } from "@/lib/api/auth";
-import { getStoredNameForLogin, getStoredProfile, setStoredProfile } from "../../lib/auth/profile";
+import { getStoredNameForLogin, getStoredProfile, setStoredNameForEmail, setStoredProfile } from "../../lib/auth/profile";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +26,9 @@ export default function LoginPage() {
     try {
       await loginMember({ email, password });
       const storedProfile = getStoredProfile();
+      if (storedProfile?.email && storedProfile?.name?.trim()) {
+        setStoredNameForEmail(storedProfile.email, storedProfile.name);
+      }
       const resolvedName = getStoredNameForLogin(email) || storedProfile?.name?.trim() || "";
       setStoredProfile({ name: resolvedName, email, password });
       const greetingName = resolvedName ? `${resolvedName}님` : "회원님";

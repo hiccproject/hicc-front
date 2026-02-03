@@ -25,6 +25,9 @@ export default function MyPage() {
   useEffect(() => {
   const profile = getStoredProfile();
   if (profile) {
+    if (profile.email && profile.name?.trim()) {
+      setStoredNameForEmail(profile.email, profile.name);
+    }
     const storedName = getStoredNameForLogin(profile.email ?? "");
     setName(storedName || profile.name || "");
     setEmailId(profile.email ?? "");
