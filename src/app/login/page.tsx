@@ -27,7 +27,7 @@ export default function LoginPage() {
       await loginMember({ email, password });
       setStoredProfile({ name: "", email, password });
       alert(`로그인 성공! ${email}님 환영합니다.`);
-      router.push("/mypage");
+      router.push("/");
     } catch (error) {
       alert(error instanceof Error ? error.message : "로그인에 실패했습니다.");
     } finally {
