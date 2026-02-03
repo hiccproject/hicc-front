@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./mypage.module.css";
+import { clearTokens } from "@/lib/auth/tokens";
+import { clearStoredProfile, getStoredProfile, setStoredProfile } from "../../lib/auth/profile";
 
 export default function MyPage() {
   const router = useRouter();
   
-  const [userInfo, setUserInfo] = useState({
-    name: "홍길동",
-    email: "hgd1234@gmail.com",
-    password: "qwer", 
-  });
+  const [name, setName] = useState("");
+  const [emailId, setEmailId] = useState("");
+  const [password, setPassword] = useState("");
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState("");
@@ -21,6 +21,15 @@ export default function MyPage() {
     current: "",
     new: "",
   });
+
+  useEffect(() => {
+    const profile = getStoredProfile();
+    if (profile) {
+      setName(profile.name ?? "");
+      setEmailId(profile.email ?? "");
+      setPassword(profile.password ?? "");
+    }
+  }, []);
 
   const startEdit = (field: string, value: string) => {
     setEditingField(field);
@@ -35,7 +44,7 @@ export default function MyPage() {
     if (e) e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
 
     if (editingField === "password") {
-      if (passwordData.current !== userInfo.password) {
+      if (passwordData.current !== password) {
         alert("현재 비밀번호가 일치하지 않습니다.");
         return;
       }
@@ -43,23 +52,34 @@ export default function MyPage() {
         alert("새 비밀번호는 8자 이상이어야 합니다.");
         return;
       }
-      setUserInfo({ ...userInfo, password: passwordData.new });
-    } else if (editingField) {
-      setUserInfo({ ...userInfo, [editingField]: tempValue });
+      setPassword(passwordData.new);
+      setStoredProfile({
+        name,
+        email: emailId,
+        password: passwordData.new,
+      });
+    } else if (editingField === "name") {
+      setName(tempValue);
+      setStoredProfile({ name: tempValue, email: emailId, password });
+    } else if (editingField === "email") {
+      setEmailId(tempValue);
+      setStoredProfile({ name, email: tempValue, password });
     }
 
     setEditingField(null);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
+    clearTokens();
+    clearStoredProfile();
     alert("로그아웃 되었습니다.");
     router.push("/");
   };
 
   const handleDeleteAccount = () => {
     if (confirm("정말로 계정을 삭제하시겠습니까?")) {
-      localStorage.removeItem("accessToken");
+      clearTokens();
+      clearStoredProfile();
       alert("계정이 삭제되었습니다.");
       router.push("/");
     }
@@ -73,8 +93,8 @@ export default function MyPage() {
         <div className={styles.body}>
           <aside className={styles.sidebar}>
             <div className={styles.profileCircle} />
-            <h2 className={styles.userName}>{userInfo.name}</h2>
-            <p className={styles.userEmail}>{userInfo.email}</p>
+            <h2 className={styles.userName}>{name}</h2>
+            <p className={styles.userEmail}>{emailId}</p>
           </aside>
 
           <section className={styles.content}>
@@ -100,9 +120,9 @@ export default function MyPage() {
                   <>
                     <div className={styles.infoLabel}>
                       <span className={styles.labelName}>이름</span>
-                      <span className={styles.labelValue}>{userInfo.name}</span>
+                      <span className={styles.labelValue}>{name}</span>
                     </div>
-                    <button className={styles.editBtn} onClick={() => startEdit("name", userInfo.name)}>수정</button>
+                    <button className={styles.editBtn} onClick={() => startEdit("name", name)}>수정</button>
                   </>
                 )}
               </div>
@@ -126,9 +146,9 @@ export default function MyPage() {
                   <>
                     <div className={styles.infoLabel}>
                       <span className={styles.labelName}>이메일</span>
-                      <span className={styles.labelValue}>{userInfo.email}</span>
+                      <span className={styles.labelValue}>{emailId}</span>
                     </div>
-                    <button className={styles.editBtn} onClick={() => startEdit("email", userInfo.email)}>수정</button>
+                    <button className={styles.editBtn} onClick={() => startEdit("email", emailId)}>수정</button>
                   </>
                 )}
               </div>

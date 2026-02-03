@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 import Header from "../../components/Header";
 import { loginMember, requestGoogleLogin } from "@/lib/api/auth";
+import { setStoredProfile } from "../../lib/auth/profile";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,8 +25,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await loginMember({ email, password });
+      setStoredProfile({ name: "", email, password });
       alert(`로그인 성공! ${email}님 환영합니다.`);
-      router.push("/");
+      router.push("/mypage");
     } catch (error) {
       alert(error instanceof Error ? error.message : "로그인에 실패했습니다.");
     } finally {
