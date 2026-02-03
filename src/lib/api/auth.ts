@@ -2,7 +2,7 @@ import { buildApiUrl } from "@/lib/api/config";
 import { extractTokens, setTokens, TokenPair } from "@/lib/auth/tokens";
 
 export type LoginPayload = {
-  loginId: string;
+  email: string;
   password: string;
 };
 
@@ -10,6 +10,8 @@ export type SignupPayload = {
   name: string;
   email: string;
   password: string;
+  passwordConfirm: string;
+  termsAgreed: boolean;
 };
 
 export type GoogleLoginTokenResponse = {
@@ -27,7 +29,7 @@ async function parseJsonSafe(res: Response) {
 }
 
 export async function loginMember(payload: LoginPayload) {
-  const res = await fetch(buildApiUrl("/api/v1/members/login"), {
+  const res = await fetch(buildApiUrl("/api/members/login"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -49,7 +51,7 @@ export async function loginMember(payload: LoginPayload) {
 }
 
 export async function signupMember(payload: SignupPayload) {
-  const res = await fetch(buildApiUrl("/api/v1/members/signup"), {
+  const res = await fetch(buildApiUrl("/api/members/signup"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -62,6 +64,30 @@ export async function signupMember(payload: SignupPayload) {
   const data = await parseJsonSafe(res);
   if (!res.ok) {
     const message = data?.message ?? "회원가입에 실패했습니다.";
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+export async function resetMemberPassword(payload: {
+  email: string;
+  code: string;
+  newPassword: string;
+}) {
+  const res = await fetch(buildApiUrl("/api/members/password-reset"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    const message = data?.message ?? "비밀번호 재설정에 실패했습니다.";
     throw new Error(message);
   }
 

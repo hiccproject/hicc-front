@@ -15,7 +15,7 @@ async function refreshAccessToken() {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
 
-  const res = await fetch(buildApiUrl("/api/v1/auth/reissue"), {
+  const res = await fetch(buildApiUrl("/api/auth/reissue"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
