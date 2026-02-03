@@ -15,41 +15,61 @@
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: 1.4fr 0.9fr;
-  gap: 56px;
-  align-items: start;
-  padding-top: 44px;
+  position: relative;
+  width: 100%;
+  min-height: 650px;
+  padding: 80px 0;
+  overflow: visible;
 }
 
 .heroLeft {
-  min-height: 520px;
+  position: absolute;
+  /* 브라우저 왼쪽 끝에서 일정 여백 유지 */
+  left: 0; 
+  top: 20%;
+  transform: translateY(-50%);
+  z-index: 100; /* 카드들보다 위로 배치 */
+  max-width: 400px;
+  pointer-events: none; /* 컨테이너가 카드 클릭을 방해하지 않음 */
+}
+
+.heroLeft > * {
+  pointer-events: auto; /* 버튼 등 실제 요소는 클릭 가능하게 설정 */
 }
 
 .heroRight {
-  padding-top: 24px;
+  position: absolute;
+  left: 50%;
+  top: 60%;
+  transform: translate(-50%, -50%); /* 화면 정중앙 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  pointer-events: auto;
 }
 
+
 .title {
-  font-size: 36px;
-  line-height: 1.15;
-  margin: 0 0 14px;
+  font-size: 42px;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #111;
+  margin-bottom: 30px;
+  line-height: 0.5;
 }
 
 .subtitle {
-  margin: 0 0 28px;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 17px;
+  line-height: 1.0;
   color: #555;
+  margin-bottom: 30px;
 }
 
 .ctaRow {
   display: flex;
   gap: 14px;
   align-items: center;
+  margin-left: 180px;
+  margin-top: 0px;
 }
 
 .btn {
@@ -114,3 +134,5 @@
     padding-top: 0;
   }
 }
+
+

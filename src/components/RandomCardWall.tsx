@@ -1,26 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // 내비게이션을 위해 추가
 import styles from "./RandomCardWall.module.css";
 import type { Card } from "@/types/card";
 import { getHomeCards } from "@/lib/api/cards";
 
-type PositionedCard = Card & {
-  x: number;   // %
-  y: number;   // %
-  rot: number; // deg
-  z: number;   // z-index
-};
-
-function shuffle<T>(arr: T[]) {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-const SHOW_COUNT = 6;
+const SHOW_COUNT = 10;
 
 export default function RandomCardWall() {
-  const [myCard, setMyCard] = useState<Card | null>(null);
-  const [publicCards, setPublicCards] = useState<Card[]>([]);
+  const router = useRouter(); // router 인스턴스 생성
+  const [cards, setCards] = useState<Card[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,90 +19,82 @@ export default function RandomCardWall() {
       try {
         setLoading(true);
         const res = await getHomeCards(SHOW_COUNT);
-        setMyCard(res.myCard);
-        setPublicCards(res.cards);
+        const shuffled = [...res.cards].sort(() => Math.random() - 0.5);
+        const finalCards = res.myCard ? [res.myCard, ...shuffled] : shuffled;
+        setCards(finalCards);
       } catch {
-        setMyCard(null);
-        setPublicCards([]);
+        setCards([]);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  /**
-   * ✅ 내 명함 우선 노출 + 나머지 랜덤 채우기
-   */
-  const cardsToShow = useMemo(() => {
-    const picked: Card[] = [];
+  const getIndex = (offset: number) => {
+    if (cards.length === 0) return 0;
+    return (currentIndex + offset + cards.length) % cards.length;
+  };
 
-    if (myCard) picked.push(myCard);
+  if (loading) return <div className={styles.skeleton}>명함을 불러오는 중…</div>;
+  if (cards.length === 0) return null;
 
-    const pool = shuffle(publicCards);
-
-    for (const c of pool) {
-      if (picked.length >= SHOW_COUNT) break;
-      if (picked.some((p) => p.id === c.id)) continue;
-      picked.push(c);
-    }
-
-    return picked.slice(0, SHOW_COUNT);
-  }, [myCard, publicCards]);
-
-  /**
-   * ✅ 카드 배치(겹침 최소화용 “약한 그리드 + 랜덤 오프셋”)
-   * - 렌더링마다 위치가 튀지 않게 useMemo
-   */
-  const positioned = useMemo<PositionedCard[]>(() => {
-    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
-    // 3x2 배치 기반 + 랜덤
-    return cardsToShow.map((c, idx) => {
-      const col = idx % 3;        // 0,1,2
-      const row = Math.floor(idx / 3); // 0,1
-
-      const baseX = col * 30; // 0, 30, 60 (대략)
-      const baseY = row * 38; // 0, 38
-
-      const x = clamp(baseX + (Math.random() * 10 - 5), 6, 72);
-      const y = clamp(baseY + (Math.random() * 12 - 6), 8, 72);
-
-      const rot = Math.random() * 8 - 4; // -4 ~ +4
-      const z = myCard?.id === c.id ? 10 : 1 + idx;
-
-      return { ...c, x, y, rot, z };
-    });
-  }, [cardsToShow, myCard?.id]);
+  const leftIdx = getIndex(-1);
+  const rightIdx = getIndex(1);
 
   return (
-    <div className={styles.wall} aria-label="랜덤 명함 미리보기 영역">
-      {loading ? (
-        <div className={styles.skeleton}>
-          <div className={styles.skeletonText}>명함을 불러오는 중…</div>
-        </div>
-      ) : (
-        positioned.map((c) => (
-          <div
-            key={c.id}
-            className={`${styles.card} ${myCard?.id === c.id ? styles.myCard : ""}`}
-            style={{
-              left: `${c.x}%`,
-              top: `${c.y}%`,
-              transform: `rotate(${c.rot}deg)`,
-              zIndex: c.z,
-            }}
-          >
-            <div className={styles.cardHeader}>
-              <h4 className={styles.name}>{c.name}</h4>
-              {c.role ? <span className={styles.role}>{c.role}</span> : null}
+    <div className={styles.carouselContainer}>
+      <button className={styles.arrowBtn} onClick={() => setCurrentIndex(leftIdx)}>‹</button>
+
+      <div className={styles.viewport}>
+        {cards.map((card, index) => {
+          let positionClass = styles.hiddenCard;
+          let isSide = false;
+
+          if (index === currentIndex) {
+            positionClass = styles.mainCard;
+          } else if (index === leftIdx) {
+            positionClass = styles.leftCard;
+            isSide = true;
+          } else if (index === rightIdx) {
+            positionClass = styles.rightCard;
+            isSide = true;
+          }
+
+          return (
+            <div
+              key={card.id}
+              className={`${styles.card} ${positionClass} ${isSide ? styles.sideCard : ""}`}
+              onClick={() => {
+                if (isSide) {
+                  // 사이드 카드 클릭 시 해당 카드를 중앙으로 이동
+                  setCurrentIndex(index);
+                } else if (index === currentIndex) {
+                  // 중앙 카드 클릭 시 해당 지원자의 포트폴리오 페이지로 이동
+                  // 경로 형식은 프로젝트 구조에 따라 /portfolio/[id] 등으로 설정 가능합니다.
+                  router.push(`/portfolio/${card.id}`); 
+                }
+              }}
+            >
+              <div className={styles.avatarCircle} />
+              <div className={styles.cardHeader}>
+                <h4 className={styles.name}>{card.name}</h4>
+                <span className={styles.role}>{card.role}</span>
+              </div>
+              <p className={styles.intro}>{card.intro}</p>
+              
+              <div className={styles.dummyTags}>
+                <span>UX/UI</span><span>AI</span><span>Motion</span>
+              </div>
+              <div className={styles.dummyLinks}>
+                <div className={styles.linkLine} />
+                <div className={styles.linkLine} />
+              </div>
             </div>
+          );
+        })}
+      </div>
 
-            {c.intro ? <p className={styles.intro}>{c.intro}</p> : null}
-
-            {myCard?.id === c.id ? <span className={styles.badge}>내 명함</span> : null}
-          </div>
-        ))
-      )}
+      <button className={styles.arrowBtn} onClick={() => setCurrentIndex(rightIdx)}>›</button>
     </div>
   );
 }

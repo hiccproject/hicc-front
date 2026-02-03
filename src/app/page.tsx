@@ -1,38 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import RandomCardWall from "@/components/RandomCardWall";
 import styles from "./page.module.css";
-import Link from "next/link";
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // 로그인 상태 확인 (기존 로직 유지)
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     setIsLoggedIn(Boolean(token));
   }, []);
 
+  // 로그인 여부에 따른 버튼 설정
   const primaryCta = isLoggedIn
     ? { href: "/create", label: "명함 만들기" }
     : { href: "/signup", label: "가입하기" };
-    
+
   return (
     <div className={styles.bg}>
       <main className={styles.shell}>
+        {/* 상단 헤더 영역 */}
         <Header />
 
         <section className={styles.hero}>
-          {/* 왼쪽: 랜덤 명함 영역 */}
+          {/* 1. 설명 영역: z-index가 높아 왼쪽 카드 위로 올라오며, 위치는 상단 20~30% 지점 */}
           <div className={styles.heroLeft}>
-            <RandomCardWall />
-          </div>
-
-          {/* 오른쪽: 설명 + 버튼 */}
-          <div className={styles.heroRight}>
             <h1 className={styles.title}>One Page Me</h1>
-
             <p className={styles.subtitle}>
               나를 설명하는 단 하나의 페이지,
               <br />
@@ -50,6 +47,11 @@ export default function HomePage() {
                 둘러보기
               </Link>
             </div>
+          </div>
+
+          {/* 2. 카드 영역: 브라우저 정중앙에 메인 카드가 오도록 배치 */}
+          <div className={styles.heroRight}>
+            <RandomCardWall />
           </div>
         </section>
       </main>
