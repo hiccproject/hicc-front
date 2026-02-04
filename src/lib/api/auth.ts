@@ -144,7 +144,7 @@ export async function deleteMemberAccount() {
 }
 
 export async function requestGoogleLogin() {
-  window.location.href = buildApiUrl("/api/v1/auth/login");
+  window.location.href = "https://api.onepageme.kr/oauth2/authorization/google";
 }
 
 export async function agreeGoogleSignup(payload: TokenPair & { agreed: boolean }) {
