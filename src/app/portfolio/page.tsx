@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // useRouter 추가
 import styles from "./portfolio.module.css";
 import Header from "@/components/Header";
 import ListView from "./components/ListView";
@@ -43,15 +43,8 @@ export type PortfolioDetail = {
   owner: boolean;
 };
 
+// [기존] 슬러그로 조회
 async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
-  /**
-   * 백엔드 실제 라우트가 프로젝트마다 달라지는 경우가 많아서
-   * “slug 조회” 후보 URL을 2개 순서대로 시도하도록 만들었어.
-   * - 1순위: /api/portfolios/share-link/{slug}
-   * - 2순위: /api/portfolios/{slug}
-   *
-   * 만약 팀 명세가 확정되어 있으면 후보 하나만 남겨도 돼.
-   */
   const candidates = [
     `/api/portfolios/share-link/${encodeURIComponent(slug)}`,
     `/api/portfolios/${encodeURIComponent(slug)}`,
@@ -63,23 +56,19 @@ async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
     try {
       const res = await fetch(url, {
         method: "GET",
-        credentials: "include", // 로그인 유저면 owner/뷰카운트가 내려올 수 있음
+        credentials: "include",
         headers: { Accept: "application/json" },
       });
-
       const json = (await res.json()) as PortfolioApiResponse<PortfolioDetail>;
 
       if (!res.ok) {
-        // 400 에러 예: { code: "A002", message: "아직 발행되지 않은 명함입니다." }
         const msg = json?.message || `요청 실패 (${res.status})`;
         throw new Error(msg);
       }
-
       if (!json?.data) throw new Error("응답 데이터가 비어있습니다.");
       return json.data;
     } catch (e) {
       lastErr = e;
-      // 다음 후보 URL 시도
     }
   }
 
@@ -88,7 +77,52 @@ async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
     : new Error("명함 정보를 불러오지 못했습니다.");
 }
 
+// [추가] 내 포트폴리오 조회 (Slug 없이 접근 시)
+async function fetchMyPortfolio(): Promise<PortfolioDetail | null> {
+  // 백엔드 명세에 따라 '/api/portfolios/my' 또는 본인 확인 가능한 엔드포인트 사용
+  // 여기서는 예시로 '/api/portfolios/my'를 호출한다고 가정합니다.
+  const url = `/api/portfolios/my`; 
+
+  const res = await fetch(url, {
+    method: "GET",
+    credentials: "include", // 쿠키(토큰) 포함 필수
+    headers: { Accept: "application/json" },
+  });
+
+  const json = (await res.json()) as PortfolioApiResponse<PortfolioDetail>;
+
+  if (res.status === 404 || json.code === "C002") {
+    // 포트폴리오가 없는 경우 (null 반환하여 생성하기 버튼 유도)
+    return null;
+  }
+
+  if (!res.ok) {
+    throw new Error(json?.message || "내 정보를 불러오지 못했습니다.");
+  }
+
+  return json.data || null;
+}
+
+// [추가] 포트폴리오 생성하기 (Step 1)
+async function createPortfolioDraft() {
+  const res = await fetch(`/api/portfolios?step=1`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      category: "OTHERS", // 기본값 설정
+      subCategory: "",
+      profileImg: "",
+    }),
+  });
+  
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "생성 실패");
+  return json.data; // portfolioId 반환
+}
+
 export default function PortfolioPage() {
+  const router = useRouter(); // 라우터 사용
   const searchParams = useSearchParams();
   const slug = useMemo(() => searchParams.get("slug")?.trim() || "", [searchParams]);
 
@@ -96,29 +130,48 @@ export default function PortfolioPage() {
   const [data, setData] = useState<PortfolioDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // [추가] 포트폴리오가 아예 없는 상태인지 체크
+  const [isNoPortfolio, setIsNoPortfolio] = useState(false);
 
   useEffect(() => {
-    if (!slug) {
-      setData(null);
-      setError(null);
-      return;
-    }
-
     let isCancelled = false;
 
     (async () => {
       try {
         setLoading(true);
         setError(null);
+        setIsNoPortfolio(false);
 
-        const detail = await fetchPortfolioBySlug(slug);
+        let detail: PortfolioDetail | null = null;
+
+        if (slug) {
+          // 1. Slug가 있으면 -> 공유 링크 조회
+          detail = await fetchPortfolioBySlug(slug);
+        } else {
+          // 2. Slug가 없으면 -> 내 포트폴리오 조회 시도
+          try {
+            detail = await fetchMyPortfolio();
+            if (!detail) {
+              // 내 포트폴리오가 없음 -> 생성하기 UI 노출
+              setIsNoPortfolio(true);
+            }
+          } catch (e) {
+            // 로그인 안 된 상태 등 -> 기존처럼 Slug 필요 메시지 띄우거나 로그인 유도
+            // 여기서는 단순히 에러 처리하지 않고, 데이터가 없으므로 "Slug 필요" 상태로 남둠
+            // (만약 "로그인이 필요합니다"를 띄우고 싶다면 여기서 처리)
+            setData(null);
+          }
+        }
+
         if (isCancelled) return;
 
-        setData(detail);
-        setLayout(detail.layoutType || "LIST");
+        if (detail) {
+          setData(detail);
+          setLayout(detail.layoutType || "LIST");
+        }
       } catch (e) {
         if (isCancelled) return;
-
         setError(e instanceof Error ? e.message : "명함 정보를 불러오지 못했습니다.");
         setData(null);
       } finally {
@@ -137,6 +190,25 @@ export default function PortfolioPage() {
       alert("링크가 복사되었습니다!");
     } catch {
       alert("복사에 실패했습니다. 주소창의 링크를 직접 복사해주세요.");
+    }
+  };
+
+  // [추가] 생성하기 버튼 핸들러
+  const handleCreate = async () => {
+    try {
+      setLoading(true);
+      // Step 1 API 호출로 ID 생성 (문서 참고)
+      // 실제로는 생성 페이지로 이동하거나, 여기서 API 호출 후 수정 페이지로 이동
+      // 여기서는 예시로 생성 페이지(/portfolio/edit)로 이동시킨다고 가정
+      router.push("/portfolio/edit"); 
+      
+      // 만약 바로 API 호출이 필요하다면:
+      // const newId = await createPortfolioDraft();
+      // router.push(`/portfolio/edit?id=${newId}`);
+    } catch (e) {
+      alert("생성 페이지로 이동할 수 없습니다.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -178,7 +250,21 @@ export default function PortfolioPage() {
       </div>
 
       <div className={styles.content}>
-        {!slug && (
+        {/* Case 1: Slug 없고 + 내 포트폴리오도 없음 -> 생성하기 UI */}
+        {!slug && isNoPortfolio && !loading && (
+          <div className={styles.stateBox}>
+            <div className={styles.stateTitle}>포트폴리오가 존재하지 않습니다</div>
+            <div className={styles.stateDesc}>
+              나만의 멋진 명함을 만들어보세요!
+            </div>
+            <button className={styles.createBtn} onClick={handleCreate}>
+              포트폴리오 생성하기
+            </button>
+          </div>
+        )}
+
+        {/* Case 2: Slug 없고 + 내 포트폴리오 조회 실패(로그인 안함 등) + 아직 데이터 없음 -> Slug 안내 */}
+        {!slug && !isNoPortfolio && !data && !loading && (
           <div className={styles.stateBox}>
             <div className={styles.stateTitle}>공유 링크(slug)가 필요해요</div>
             <div className={styles.stateDesc}>
@@ -189,21 +275,21 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {slug && loading && (
+        {loading && (
           <div className={styles.stateBox}>
             <div className={styles.stateTitle}>불러오는 중…</div>
-            <div className={styles.stateDesc}>명함 정보를 가져오고 있어.</div>
+            <div className={styles.stateDesc}>데이터를 가져오고 있어.</div>
           </div>
         )}
 
-        {slug && !loading && error && (
+        {!loading && error && (
           <div className={styles.stateBox}>
             <div className={styles.stateTitle}>불러오기 실패</div>
             <div className={styles.stateDesc}>{error}</div>
           </div>
         )}
 
-        {slug && !loading && !error && data && (
+        {!loading && !error && data && (
           <>
             {layout === "CARD" && <CardView data={data} />}
             {layout === "LIST" && <ListView data={data} isOwner={data.owner} />}
