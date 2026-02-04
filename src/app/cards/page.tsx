@@ -36,26 +36,43 @@ export default function CardsPage() {
 
       try {
         setLoading(true);
+        setError(null);
+
         // API 호출
         const res = await fetch("/api/portfolios/my", {
           method: "GET",
+          // [중요] 쿠키와 헤더 모두 포함 (서버 설정에 따라 둘 중 하나가 필수일 수 있음)
+          credentials: "include", 
           headers: {
-            Authorization: `Bearer ${token}`, // 헤더에 토큰 추가
+            Authorization: `Bearer ${token}`, 
             Accept: "application/json",
           },
         });
 
-        if (!res.ok) {
-          throw new Error("명함 목록을 불러오지 못했습니다.");
+        // 응답 본문을 텍스트로 먼저 읽어서 JSON 파싱 에러 방지
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (e) {
+          // JSON이 아닌 경우 (예: 404 HTML 페이지 등)
+          throw new Error(`서버 응답이 올바르지 않습니다. (Status: ${res.status})`);
         }
 
-        const json = await res.json();
+        if (!res.ok) {
+          // 서버에서 보내준 에러 메시지가 있으면 사용, 없으면 상태 코드 표시
+          throw new Error(json.message || `요청 실패 (${res.status})`);
+        }
+
         // 응답이 배열 형태라고 가정 (제공해주신 예시 참고)
+        // 만약 { data: [...] } 형태라면 json.data 사용
         const list = Array.isArray(json) ? json : json.data || [];
         setPortfolios(list);
+
       } catch (err) {
-        console.error(err);
-        setError("데이터를 불러오는 도중 오류가 발생했습니다.");
+        console.error("명함 목록 조회 에러:", err);
+        // [수정] 실제 에러 메시지를 화면에 표시
+        setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
       } finally {
         setLoading(false);
       }
@@ -66,6 +83,7 @@ export default function CardsPage() {
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleDateString("ko-KR", {
       year: "numeric",
@@ -87,7 +105,6 @@ export default function CardsPage() {
             </p>
           </div>
           
-          {/* 메인 페이지 스타일을 참고한 CTA 버튼 */}
           <Link href="/create" className={`${styles.btn} ${styles.btnPrimary}`}>
             + 새 명함 만들기
           </Link>
@@ -95,7 +112,18 @@ export default function CardsPage() {
 
         {loading && <div className={styles.loadingState}>불러오는 중...</div>}
         
-        {error && <div className={styles.errorState}>{error}</div>}
+        {/* 에러 발생 시 구체적인 메시지 표시 */}
+        {error && (
+          <div className={styles.errorState}>
+            <p>⚠️ {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className={styles.retryBtn}
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
 
         {!loading && !error && portfolios.length === 0 && (
           <div className={styles.emptyState}>
@@ -109,20 +137,18 @@ export default function CardsPage() {
 
         <div className={styles.grid}>
           {portfolios.map((item) => {
-            // 제목이 "null - null" 이거나 비어있으면 기본값 표시
             const displayTitle = (!item.title || item.title === "null - null") 
               ? "제목 없는 명함" 
               : item.title;
 
-            // 상태에 따른 뱃지 스타일
             const isDraft = item.status === "DRAFT";
             
-            // 링크 로직: 
-            // DRAFT -> 작성 페이지(create)로 이동 (step 파라미터 포함)
-            // PUBLISHED -> 상세 조회 페이지로 이동 (slug가 없으므로 id 사용, 추후 slug로 변경 권장)
+            // 링크: 작성 중이면 create 페이지, 완료되면 조회 페이지
+            // step이 0이거나 없을 경우 1로 기본 설정
+            const nextStep = item.lastStep || 1;
             const cardLink = isDraft 
-              ? `/create?portfolioId=${item.id}&step=${item.lastStep || 1}`
-              : `/portfolio?id=${item.id}`; // API에 slug가 추가되면 `?slug=${item.slug}`로 변경
+              ? `/create?portfolioId=${item.id}&step=${nextStep}`
+              : `/portfolio?id=${item.id}`; // 추후 slug가 생기면 ?slug=${item.slug}로 변경
 
             return (
               <Link key={item.id} href={cardLink} className={styles.card}>
