@@ -1,5 +1,10 @@
 import { buildApiUrl } from "@/lib/api/config";
-import { extractTokens, setTokens, TokenPair } from "@/lib/auth/tokens";
+import {
+  extractTokens,
+  getAccessToken,
+  setTokens,
+  TokenPair,
+} from "@/lib/auth/tokens";
 
 export type LoginPayload = {
   email: string;
@@ -75,10 +80,12 @@ export async function resetMemberPassword(payload: {
   code: string;
   newPassword: string;
 }) {
+  const accessToken = getAccessToken();
   const res = await fetch(buildApiUrl("/api/members/password-reset"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify(payload),
