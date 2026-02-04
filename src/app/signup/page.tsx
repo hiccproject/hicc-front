@@ -64,12 +64,9 @@ export default function SignupPage() {
         passwordConfirm: password2,
         termsAgreed: agreeTerms,
       });
-<<<<<<< HEAD
 
-=======
       setStoredProfile({ name, email: fullEmail, password });
       setStoredNameForEmail(fullEmail, name);
->>>>>>> 0cf12345eda7380c3b8b82daa09b2fa3953132d7
       alert("회원가입이 완료되었습니다.");
       router.push("/"); // ✅ 가입 완료 후 홈으로 이동
     } catch (error) {
