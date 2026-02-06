@@ -309,7 +309,7 @@ export default function CreatePage() {
                       </option>
                     ))}
                   </select>
-                  <select name="subCategory" value={formData.subCategory} onChange={handleChange} className={styles.subSelectBox}>
+                  <select name="subCategory" value={formData.subCategory} onChange={handleChange} className={styles.selectBox}>
                     {subCategoryOptions.map((job) => (
                       <option key={job} value={job}>
                         {job}
@@ -333,7 +333,7 @@ export default function CreatePage() {
                           </option>
                         ))}
                       </select>
-                      <select name="subCategory" value={formData.subCategory} onChange={handleChange} className={styles.subSelectBox}>
+                      <select name="subCategory" value={formData.subCategory} onChange={handleChange} className={styles.selectBox}>
                         {subCategoryOptions.map((job) => (
                           <option key={job} value={job}>
                             {job}
