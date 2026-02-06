@@ -35,69 +35,48 @@ function getSafeToken(): string | null {
  * 3. 실패하거나 데이터 없으면 null
  */
 async function fetchMyCard(): Promise<Card | null> {
-  const token = getSafeToken();
-  
-  // [핵심 수정] 토큰이 없으면 아예 API를 호출하지 않음 -> 인증 오류 방지
-  if (!token) return null;
-
   try {
-    const res = await fetch("/api/portfolios/my", {
+    // ✅ auth:true로 호출하면 Authorization 자동 + 401/403면 refresh 시도
+    const json = await apiFetch<any>("/api/portfolios/my", {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+      auth: true,
     });
 
-    // 401(Unauthorized) 등의 에러 발생 시 로그아웃 처리된 것으로 간주하고 null 반환
-    if (!res.ok) return null;
-
-    const json = await res.json();
     const list: PortfolioItem[] = Array.isArray(json) ? json : json.data || [];
-
     if (list.length === 0) return null;
 
-    // 날짜 내림차순 정렬 (최신순)
     const sortedList = list.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
 
-    // 우선순위 선정: DRAFT > PUBLISHED
     const draftCard = sortedList.find((item) => item.status === "DRAFT");
     const publishedCard = sortedList.find((item) => item.status === "PUBLISHED");
-    
     const selected = draftCard || publishedCard;
-
     if (!selected) return null;
 
-    // Card 타입으로 변환
     let name = selected.title || "제목 없음";
     let role = "Role";
-    
-    // "null - null" 혹은 "이름 - 직무" 파싱 처리
+
     if (name === "null - null") {
-        name = "작성 중인 명함";
-        role = "미정";
-    } else if (name && name.includes(" - ")) {
-        const parts = name.split(" - ");
-        if (parts.length >= 2) {
-            name = parts[0];
-            role = parts[1];
-        }
+      name = "작성 중인 명함";
+      role = "미정";
+    } else if (name.includes(" - ")) {
+      const parts = name.split(" - ");
+      if (parts.length >= 2) {
+        name = parts[0];
+        role = parts[1];
+      }
     }
 
     return {
       id: selected.id.toString(),
-      name: name,
-      role: role,
+      name,
+      role,
       intro: selected.status === "DRAFT" ? "이어서 작성하기" : "포트폴리오 보러가기",
       profileImage: selected.profileImg || undefined,
-      // DRAFT 상태 여부 등을 구분해야 한다면 별도 필드 추가 가능
     };
-
-  } catch (error) {
-    // 네트워크 오류 등이 나도 화면 전체가 깨지지 않도록 null 반환
-    console.error("Failed to fetch my card silently:", error);
+  } catch (e) {
+    console.error("Failed to fetch my card:", e);
     return null;
   }
 }
