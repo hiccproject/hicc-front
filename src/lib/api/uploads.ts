@@ -1,4 +1,5 @@
 import { buildApiUrl } from "@/lib/api/config";
+import { getAccessToken } from "@/lib/auth/tokens";
 
 async function readResponseBody(res: Response) {
   const text = await res.text().catch(() => "");
@@ -14,8 +15,11 @@ async function uploadFile(path: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
+  const token = getAccessToken();
+
   const res = await fetch(buildApiUrl(path), {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     credentials: "include",
     body: formData,
     cache: "no-store",
@@ -35,8 +39,4 @@ async function uploadFile(path: string, file: File) {
 
 export async function uploadImage(file: File) {
   return uploadFile("/api/images/upload", file);
-}
-
-export async function uploadS3Test(file: File) {
-  return uploadFile("/s3/upload", file);
 }
