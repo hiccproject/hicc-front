@@ -5,9 +5,10 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./create.module.css";
-import { savePortfolioStep, PortfolioData } from "@/lib/api/cards";
+import { savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
+import { uploadImage } from "@/lib/api/uploads";
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4;
 
 type StepMeta = {
   id: Step;
@@ -15,50 +16,150 @@ type StepMeta = {
   headline: string;
 };
 
+type UploadImageResponse =
+  | string
+  | {
+      data?: string;
+      url?: string;
+      imageUrl?: string;
+    };
+
+type CategoryOption = {
+  value: PortfolioCategory;
+  label: string;
+  jobs: string[];
+};
+
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
+
+const CATEGORY_OPTIONS: CategoryOption[] = [
+  { value: "DEVELOPMENT", label: "IT·개발", jobs: ["백엔드", "프론트엔드", "풀스택", "모바일", "DevOps", "데이터 엔지니어"] },
+  { value: "DESIGN", label: "디자인", jobs: ["UX/UI 디자이너", "프로덕트 디자이너", "BX/브랜딩", "그래픽 디자이너"] },
+  { value: "MARKETING", label: "마케팅·광고", jobs: ["퍼포먼스 마케터", "콘텐츠 마케터", "CRM 마케터"] },
+  { value: "PLANNING", label: "기획·전략", jobs: ["서비스 기획", "PM", "사업 기획", "전략 기획"] },
+  { value: "BUSINESS", label: "영업·고객상담", jobs: ["B2B 영업", "B2C 영업", "고객상담", "CS 매니저"] },
+  { value: "MANAGEMENT", label: "경영·인사·총무", jobs: ["인사", "총무", "경영지원", "조직문화"] },
+  { value: "FINANCE", label: "금융·재무", jobs: ["회계", "재무", "투자", "리스크관리"] },
+  { value: "SERVICE", label: "서비스·교육", jobs: ["교육 기획", "강사", "운영 매니저", "서비스 운영"] },
+  { value: "ENGINEERING", label: "엔지니어링·설계", jobs: ["기계 설계", "전기·전자", "품질관리", "생산기술"] },
+  { value: "MEDIA", label: "미디어·예술", jobs: ["영상 편집", "PD", "작가", "아트디렉터"] },
+  { value: "MEDICAL", label: "의료·바이오", jobs: ["간호", "임상", "바이오 연구", "의료기기"] },
+  { value: "OTHERS", label: "기타", jobs: ["기타"] },
+];
+
 const steps: StepMeta[] = [
   { id: 1, label: "직군 선택", headline: "직군을 선택해주세요" },
   { id: 2, label: "추가 정보 입력", headline: "추가 정보를 입력해주세요" },
   { id: 3, label: "프로젝트 첨부", headline: "프로젝트를 첨부해주세요" },
   { id: 4, label: "소개글 입력", headline: "당신의 페이지를 요약하는 소개글을 써주세요" },
-  { id: 5, label: "레이아웃 선택", headline: "원하는 레이아웃을 골라주세요" },
 ];
+
+function extractImageUrl(payload: UploadImageResponse): string {
+  if (typeof payload === "string") return payload;
+  return payload?.data || payload?.url || payload?.imageUrl || "";
+}
+
+function getJobsByCategory(category: PortfolioCategory) {
+  return CATEGORY_OPTIONS.find((option) => option.value === category)?.jobs ?? ["기타"];
+}
 
 export default function CreatePage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
+  const [tagInput, setTagInput] = useState("");
 
-  // 폼 데이터 상태 관리
   const [formData, setFormData] = useState<PortfolioData>({
-    category: "개발",
-    subCategory: "프론트엔드",
-    profileImg: "", // 필요 시 업로드 로직 추가
+    category: "DEVELOPMENT",
+    subCategory: "백엔드",
+    profileImg: DEFAULT_PROFILE_IMG,
     email: "",
     phone: "",
     location: "",
     projects: [{ projectName: "", projectSummary: "", projectLink: "" }],
     summaryIntro: "",
+    tags: [],
     layoutType: "CARD",
   });
-
   // 입력 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
   // 프로젝트 핸들러
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextCategory = e.target.value as PortfolioCategory;
+    const nextJobs = getJobsByCategory(nextCategory);
+    setFormData((prev) => ({
+      ...prev,
+      category: nextCategory,
+      subCategory: nextJobs[0] ?? "기타",
+    }));
+  };
+
   const handleProjectChange = (index: number, field: string, value: string) => {
     const newProjects = [...formData.projects];
     newProjects[index] = { ...newProjects[index], [field]: value };
     setFormData((prev) => ({ ...prev, projects: newProjects }));
   };
 
-  const addProject = () => {
-    setFormData(prev => ({ ...prev, projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "" }] }));
+  const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const localPreview = URL.createObjectURL(file);
+    setProfilePreview(localPreview);
+
+    try {
+      const uploaded = (await uploadImage(file)) as UploadImageResponse;
+      const uploadedUrl = extractImageUrl(uploaded);
+      const finalUrl = uploadedUrl || DEFAULT_PROFILE_IMG;
+
+      setFormData((prev) => ({ ...prev, profileImg: finalUrl }));
+      localStorage.setItem("profileImg", finalUrl);
+    } catch (error) {
+      console.error(error);
+      setFormData((prev) => ({ ...prev, profileImg: DEFAULT_PROFILE_IMG }));
+      localStorage.setItem("profileImg", DEFAULT_PROFILE_IMG);
+      alert("이미지 업로드에 실패하여 기본 이미지가 사용됩니다.");
+    }
   };
 
+  const addTag = () => {
+    const normalized = tagInput.trim();
+    if (!normalized) return;
+    if ((formData.tags?.length || 0) >= 5) {
+      alert("태그는 최대 5개까지 등록 가능합니다.");
+      return;
+    }
+    if (formData.tags?.includes(normalized)) {
+      setTagInput("");
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, tags: [...(prev.tags || []), normalized] }));
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    setFormData((prev) => ({ ...prev, tags: (prev.tags || []).filter((item) => item !== tag) }));
+  };
+
+  const addProject = () => {
+    setFormData((prev) => ({
+      ...prev,
+      projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "" }],
+    }));
+  };
+
+  const removeProject = (index: number) => {
+    setFormData((prev) => {
+      if (prev.projects.length === 1) return prev;
+      return { ...prev, projects: prev.projects.filter((_, i) => i !== index) };
+    });
+  };
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
     if (isSaving) return;
@@ -66,32 +167,44 @@ export default function CreatePage() {
 
     try {
       let body = {};
-      
       // 단계별 데이터 매핑
       if (step === 1) {
-        body = { category: formData.category, subCategory: formData.subCategory, profileImg: formData.profileImg };
+        body = {
+          category: formData.category,
+          subCategory: formData.subCategory,
+          profileImg: formData.profileImg || DEFAULT_PROFILE_IMG,
+        };
       } else if (step === 2) {
-        body = { email: formData.email, phone: formData.phone, location: formData.location };
+        body = {
+          email: formData.email,
+          phone: formData.phone,
+          location: formData.location,
+        };
       } else if (step === 3) {
         body = { projects: formData.projects };
-      } else if (step === 4) {
-        body = { summaryIntro: formData.summaryIntro };
-      } else if (step === 5) {
-        body = { layoutType: formData.layoutType };
+      } else {
+        body = {
+          summaryIntro: formData.summaryIntro,
+          tags: formData.tags || [],
+        };
       }
-
       // API 호출
       const res = await savePortfolioStep(step, body, portfolioId);
-      
       // 1단계에서 받은 ID 저장 (이후 단계에서 필수)
+      let nextPortfolioId = portfolioId;
       if (step === 1 && res.data) {
+        nextPortfolioId = res.data;
         setPortfolioId(res.data);
       }
 
-      if (step < 5) {
+      if (step < 4) {
         setStep((prev) => (prev + 1) as Step);
         window.scrollTo(0, 0);
       } else {
+        if (!nextPortfolioId) {
+          throw new Error("포트폴리오 ID가 없습니다.");
+        }
+        await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
         alert("포트폴리오 발행이 완료되었습니다!");
         router.push("/mypage");
       }
@@ -102,11 +215,27 @@ export default function CreatePage() {
       setIsSaving(false);
     }
   };
-
   // 헤더 텍스트 등 UI 헬퍼
   const stepHeadline = useMemo(() => steps.find((s) => s.id === step)?.headline ?? "", [step]);
   const stepNumber = useMemo(() => String(step).padStart(2, "0"), [step]);
   const canGoPrev = step > 1;
+  const subCategoryOptions = useMemo(() => getJobsByCategory(formData.category), [formData.category]);
+
+  const profileEditor = (
+    <div className={styles.profileCard}>
+      <label className={styles.avatar}>
+        <img src={profilePreview} alt="프로필 이미지" className={styles.avatarImage} />
+        <span className={styles.avatarEdit}>✎</span>
+        <input
+          type="file"
+          accept="image/*"
+          className={styles.hiddenFileInput}
+          onChange={handleProfileUpload}
+        />
+      </label>
+      <div className={styles.profileName}>홍길동</div>
+    </div>
+  );
 
   return (
     <div className={styles.bg}>
@@ -132,43 +261,65 @@ export default function CreatePage() {
               <span className={styles.stepNumber}>{stepNumber}</span>
               <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
             </div>
-
             {/* Step 1: 직군 */}
             {step === 1 && (
               <div className={styles.stepPanel}>
+                {profileEditor}
                 <div className={styles.formRow}>
-                  <select name="category" value={formData.category} onChange={handleChange} className={styles.selectBox}>
-                    <option value="개발">개발</option>
-                    <option value="디자인">디자인</option>
-                    <option value="기획">기획</option>
+                  <select name="category" value={formData.category} onChange={handleCategoryChange} className={styles.selectBox}>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
-                  <input
-                    name="subCategory"
-                    className={styles.textInput}
-                    placeholder="세부 직군 (예: UX/UI 디자이너)"
-                    value={formData.subCategory}
-                    onChange={handleChange}
-                  />
+                  <select name="subCategory" value={formData.subCategory} onChange={handleChange} className={styles.subSelectBox}>
+                    {subCategoryOptions.map((job) => (
+                      <option key={job} value={job}>
+                        {job}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
-
             {/* Step 2: 정보 */}
             {step === 2 && (
-              <div className={styles.stepPanel}>
-                <div className={styles.formStack}>
-                  <input name="email" className={styles.textInput} placeholder="이메일 (필수)" value={formData.email} onChange={handleChange} />
-                  <input name="phone" className={styles.textInput} placeholder="전화번호 (선택)" value={formData.phone} onChange={handleChange} />
-                  <input name="location" className={styles.textInput} placeholder="위치 (선택)" value={formData.location} onChange={handleChange} />
+              <div className={styles.stepPanelColumn}>
+                <div className={styles.stepPanel}>
+                  {profileEditor}
+                  <div className={styles.formStack}>
+                    <div className={styles.formRow}>
+                      <select name="category" value={formData.category} onChange={handleCategoryChange} className={styles.selectBox}>
+                        {CATEGORY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select name="subCategory" value={formData.subCategory} onChange={handleChange} className={styles.subSelectBox}>
+                        {subCategoryOptions.map((job) => (
+                          <option key={job} value={job}>
+                            {job}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <input name="email" className={styles.textInputWide} placeholder="이메일을 입력해주세요." value={formData.email} onChange={handleChange} />
+                    <input name="phone" className={styles.textInputWide} placeholder="전화번호를 입력해주세요. (선택)" value={formData.phone} onChange={handleChange} />
+                    <input name="location" className={styles.textInputWide} placeholder="위치를 입력해주세요. (선택)" value={formData.location} onChange={handleChange} />
+                  </div>
                 </div>
               </div>
             )}
-
             {/* Step 3: 프로젝트 */}
             {step === 3 && (
               <div className={styles.projectPanel}>
                 {formData.projects.map((proj, idx) => (
-                  <div key={idx} className={styles.projectCard} style={{ marginBottom: '20px' }}>
+                  <div key={idx} className={styles.projectCard}>
+                    <button className={styles.deleteProjectButton} type="button" onClick={() => removeProject(idx)}>
+                      🗑️
+                    </button>
                     <input
                       className={styles.projectInput}
                       placeholder="프로젝트 제목"
@@ -181,59 +332,56 @@ export default function CreatePage() {
                       value={proj.projectSummary}
                       onChange={(e) => handleProjectChange(idx, "projectSummary", e.target.value)}
                     />
+                    <label className={styles.photoDrop}>
+                      <input type="file" accept="image/*" className={styles.hiddenFileInput} />
+                      <span className={styles.photoIcon}>🖼️</span>
+                      <span>이미지를 첨부해 주세요. (선택)</span>
+                    </label>
                     <input
-                      className={styles.textInput}
-                      placeholder="관련 링크 (URL)"
-                      value={proj.projectLink}
+                      className={styles.projectLinkInput}
+                      placeholder="링크를 붙여넣어 주세요."
+                      value={proj.projectLink || ""}
                       onChange={(e) => handleProjectChange(idx, "projectLink", e.target.value)}
-                      style={{ marginTop: '10px' }}
                     />
                   </div>
                 ))}
-                <div className={styles.projectAdd} onClick={addProject} style={{ cursor: "pointer" }}>
-                  <span className={styles.projectAddIcon}>＋</span> 프로젝트 추가
-                </div>
+                <button className={styles.projectAdd} type="button" onClick={addProject}>
+                  <span className={styles.projectAddIcon}>＋</span>
+                </button>
               </div>
             )}
-
             {/* Step 4: 소개 */}
             {step === 4 && (
               <div className={styles.bioPanel}>
                 <textarea
                   name="summaryIntro"
                   className={styles.bioInput}
-                  placeholder="당신의 명함에 대해서 설명해주세요."
+                  placeholder="당신의 명함에 대해 설명해주세요. (선택)"
                   value={formData.summaryIntro}
                   onChange={handleChange}
                 />
-              </div>
-            )}
-
-            {/* Step 5: 레이아웃 선택 */}
-            {step === 5 && (
-              <div className={styles.stepPanel}>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                  {["CARD", "LIST", "GRID"].map((type) => (
-                    <div
-                      key={type}
-                      onClick={() => setFormData(prev => ({ ...prev, layoutType: type as any }))}
-                      style={{
-                        flex: 1,
-                        padding: '20px',
-                        border: formData.layoutType === type ? '2px solid #3b82f6' : '1px solid #ddd',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        backgroundColor: formData.layoutType === type ? '#eff6ff' : '#fff'
-                      }}
-                    >
-                      <strong>{type}</strong>
-                      <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                        {type === "CARD" && "명함형 디자인"}
-                        {type === "LIST" && "리스트형 디자인"}
-                        {type === "GRID" && "그리드형 디자인"}
-                      </div>
-                    </div>
+              <div className={styles.tagEditor}>
+                  <input
+                    className={styles.tagInput}
+                    placeholder="태그를 입력하고 Enter를 눌러주세요. (최대 5개)"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <button type="button" className={styles.tagAddButton} onClick={addTag}>
+                    태그 추가
+                  </button>
+                </div>
+                <div className={styles.tagList}>
+                  {(formData.tags || []).map((tag) => (
+                    <button key={tag} type="button" className={styles.tagChip} onClick={() => removeTag(tag)}>
+                      #{tag} ×
+                    </button>
                   ))}
                 </div>
               </div>
@@ -251,12 +399,12 @@ export default function CreatePage() {
             ←
           </button>
           <button
-            className={`${styles.navButton} ${styles.navButtonSolid}`}
+            className={`${styles.navButton} ${styles.navButtonSolid} ${step === 4 ? styles.navButtonDone : ""}`}
             type="button"
             onClick={handleNext}
             disabled={isSaving}
           >
-            {isSaving ? "저장 중..." : step === 5 ? "발행하기" : "→"}
+            {isSaving ? "저장 중..." : step === 4 ? "✓" : "→"}
           </button>
         </div>
       </main>

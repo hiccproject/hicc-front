@@ -6,20 +6,26 @@ import { useRouter } from "next/navigation";
 import styles from "./Header.module.css";
 import { clearTokens, getAccessToken } from "@/lib/auth/tokens";
 
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
+
 export default function Header() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [profileImg, setProfileImg] = useState<string>(DEFAULT_PROFILE_IMG);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   // 컴포넌트 마운트 시 토큰 존재 여부를 확인하여 로그인 상태를 설정합니다.
   useEffect(() => {
     const token = getAccessToken();
     if (token) {
       setIsLoggedIn(true);
     }
-  }, []);
 
+    const savedProfileImg = localStorage.getItem("profileImg");
+    if (savedProfileImg) {
+      setProfileImg(savedProfileImg);
+    }
+  }, []);
   // 외부 클릭 감지 로직
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -34,7 +40,6 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isDropdownOpen]);
-
   // 로그아웃 함수
   const handleLogout = () => {
     clearTokens();
@@ -63,13 +68,14 @@ export default function Header() {
               className={styles.profileCircle}
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               aria-label="사용자 메뉴"
+              style={{ backgroundImage: `url(${profileImg})` }}
             />
             
             {isDropdownOpen && (
               <div className={styles.dropdown}>
-                <Link 
-                  href="/mypage" 
-                  className={styles.dropdownItem} 
+                <Link
+                  href="/mypage"
+                  className={styles.dropdownItem}
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   마이페이지

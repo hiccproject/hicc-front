@@ -43,8 +43,22 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
 
 // --- [추가 기능] 명함 생성 API 연결 ---
 
+export type PortfolioCategory =
+  | "DEVELOPMENT"
+  | "DESIGN"
+  | "MARKETING"
+  | "PLANNING"
+  | "BUSINESS"
+  | "MANAGEMENT"
+  | "FINANCE"
+  | "SERVICE"
+  | "ENGINEERING"
+  | "MEDIA"
+  | "MEDICAL"
+  | "OTHERS";
+
 export type PortfolioData = {
-  category: string;
+  category: PortfolioCategory;
   subCategory: string;
   profileImg?: string;
   email: string;
@@ -52,6 +66,7 @@ export type PortfolioData = {
   location?: string;
   projects: { projectName: string; projectSummary: string; projectLink?: string }[];
   summaryIntro: string;
+  tags?: string[];
   layoutType: "CARD" | "LIST" | "GRID";
 };
 
@@ -71,10 +86,17 @@ export async function savePortfolioStep(
     params.append("portfolioId", portfolioId.toString());
   }
 
-  // 예: POST /api/portfolios?step=1
-  return apiFetch<{ data: number }>(`/api/portfolios?${params.toString()}`, {
+  // 예: POST /api/portfolios/save?step=1
+  return apiFetch<{ data: number }>(`/api/portfolios/save?${params.toString()}`, {
     method: "POST",
     body: JSON.stringify(body),
     auth: true, // 토큰 자동 포함
+  });
+}
+
+export async function getPortfolioShareLink(portfolioId: number) {
+  return apiFetch<{ data: string }>(`/api/portfolios/${portfolioId}/share-link`, {
+    method: "GET",
+    auth: true,
   });
 }

@@ -43,38 +43,38 @@ export type PortfolioDetail = {
   owner: boolean;
 };
 
+async function fetchShareLink(portfolioId: number): Promise<string> {
+  const res = await fetch(`/api/portfolios/${portfolioId}/share-link`, {
+    method: "GET",
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+
+  const json = (await res.json()) as PortfolioApiResponse<string>;
+  if (!res.ok) {
+    throw new Error(json?.message || `요청 실패 (${res.status})`);
+  }
+  if (!json?.data) {
+    throw new Error("공유 링크가 비어있습니다.");
+  }
+  return json.data;
+}
+
 // [기존] 슬러그로 조회
 async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
-  const candidates = [
-    `/api/portfolios/share-link/${encodeURIComponent(slug)}`,
-    `/api/portfolios/${encodeURIComponent(slug)}`,
-  ];
+  const res = await fetch(`/api/portfolios/${encodeURIComponent(slug)}`, {
+    method: "GET",
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  const json = (await res.json()) as PortfolioApiResponse<PortfolioDetail>;
 
-  let lastErr: unknown = null;
-
-  for (const url of candidates) {
-    try {
-      const res = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-      const json = (await res.json()) as PortfolioApiResponse<PortfolioDetail>;
-
-      if (!res.ok) {
-        const msg = json?.message || `요청 실패 (${res.status})`;
-        throw new Error(msg);
-      }
-      if (!json?.data) throw new Error("응답 데이터가 비어있습니다.");
-      return json.data;
-    } catch (e) {
-      lastErr = e;
-    }
+ if (!res.ok) {
+    const msg = json?.message || `요청 실패 (${res.status})`;
+    throw new Error(msg);
   }
-
-  throw lastErr instanceof Error
-    ? lastErr
-    : new Error("명함 정보를 불러오지 못했습니다.");
+  if (!json?.data) throw new Error("응답 데이터가 비어있습니다.");
+  return json.data;
 }
 
 // [추가] 내 포트폴리오 조회 (Slug 없이 접근 시)
@@ -101,11 +101,11 @@ async function fetchMyPortfolio(): Promise<PortfolioDetail | null> {
   }
 
   return json.data || null;
-}
+} 
 
 // [추가] 포트폴리오 생성하기 (Step 1)
 async function createPortfolioDraft() {
-  const res = await fetch(`/api/portfolios?step=1`, {
+  const res = await fetch(`/api/portfolios/save?step=1`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -186,7 +186,11 @@ export default function PortfolioPage() {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const link = data?.owner && data.id
+        ? await fetchShareLink(data.id)
+        : window.location.href;
+
+      await navigator.clipboard.writeText(link);
       alert("링크가 복사되었습니다!");
     } catch {
       alert("복사에 실패했습니다. 주소창의 링크를 직접 복사해주세요.");
