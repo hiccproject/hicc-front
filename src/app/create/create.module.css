@@ -113,13 +113,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  min-width: 172px;
+  gap: 10px;
+  min-width: 120px;
 }
 
 .avatar {
-  width: 132px;
-  height: 132px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   background: #eceff3;
   display: flex;
@@ -139,18 +139,18 @@
 }
 
 .avatarEdit {
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #4a4f58;
   color: #ffffff;
-  font-size: 22px;
+  font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  right: -6px;
-  bottom: -2px;
+  right: -4px;
+  bottom: -3px;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
@@ -167,7 +167,7 @@
 }
 
 .profileName {
-  font-size: 42px;
+  font-size: 19px;
   line-height: 1;
   font-weight: 700;
   letter-spacing: -0.02em;

@@ -1,12 +1,13 @@
 // 명함 생성 페이지
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./create.module.css";
 import { savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
 import { uploadImage } from "@/lib/api/uploads";
+import { getStoredProfile } from "@/lib/auth/profile";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -73,6 +74,7 @@ export default function CreatePage() {
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
+  const [profileName, setProfileName] = useState("회원");
   const [tagInput, setTagInput] = useState("");
 
   const [formData, setFormData] = useState<PortfolioData>({
@@ -87,6 +89,20 @@ export default function CreatePage() {
     tags: [],
     layoutType: "CARD",
   });
+
+  useEffect(() => {
+    const profile = getStoredProfile();
+    const savedProfileImg = localStorage.getItem("profileImg");
+
+    if (profile?.name?.trim()) {
+      setProfileName(profile.name.trim());
+    }
+
+    if (savedProfileImg?.trim()) {
+      setProfilePreview(savedProfileImg);
+      setFormData((prev) => ({ ...prev, profileImg: savedProfileImg }));
+    }
+  }, []);
   // 입력 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -253,7 +269,7 @@ export default function CreatePage() {
           onChange={handleProfileUpload}
         />
       </label>
-      <div className={styles.profileName}>홍길동</div>
+      <div className={styles.profileName}>{profileName}</div>
     </div>
   );
 
