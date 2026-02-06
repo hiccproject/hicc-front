@@ -76,6 +76,7 @@ export default function CreatePage() {
   const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
   const [profileName, setProfileName] = useState("회원");
   const [tagInput, setTagInput] = useState("");
+  const [projectImagePreviews, setProjectImagePreviews] = useState<string[]>([""]);
 
   const [formData, setFormData] = useState<PortfolioData>({
     category: "DEVELOPMENT",
@@ -172,12 +173,64 @@ export default function CreatePage() {
       ...prev,
       projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "" }],
     }));
+    setProjectImagePreviews((prev) => [...prev, ""]);
   };
 
   const removeProject = (index: number) => {
     setFormData((prev) => {
       if (prev.projects.length === 1) return prev;
       return { ...prev, projects: prev.projects.filter((_, i) => i !== index) };
+    });
+    setProjectImagePreviews((prev) => {
+      if (prev.length === 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const getProjectLinks = (projectLink?: string) => {
+    const normalized = (projectLink || "")
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    return normalized.length > 0 ? normalized : [""];
+  };
+
+  const updateProjectLinks = (projectIndex: number, links: string[]) => {
+    const normalized = links.map((item) => item.trim()).filter(Boolean).join("\n");
+    handleProjectChange(projectIndex, "projectLink", normalized);
+  };
+
+  const addProjectLink = (projectIndex: number) => {
+    const nextLinks = [...getProjectLinks(formData.projects[projectIndex]?.projectLink), ""];
+    updateProjectLinks(projectIndex, nextLinks);
+  };
+
+  const removeProjectLink = (projectIndex: number, linkIndex: number) => {
+    const currentLinks = getProjectLinks(formData.projects[projectIndex]?.projectLink);
+    if (currentLinks.length <= 1) {
+      updateProjectLinks(projectIndex, [""]);
+      return;
+    }
+    const nextLinks = currentLinks.filter((_, idx) => idx !== linkIndex);
+    updateProjectLinks(projectIndex, nextLinks);
+  };
+
+  const handleProjectLinkChange = (projectIndex: number, linkIndex: number, value: string) => {
+    const nextLinks = getProjectLinks(formData.projects[projectIndex]?.projectLink);
+    nextLinks[linkIndex] = value;
+    updateProjectLinks(projectIndex, nextLinks);
+  };
+
+  const handleProjectImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const localPreview = URL.createObjectURL(file);
+    setProjectImagePreviews((prev) => {
+      const next = [...prev];
+      next[index] = localPreview;
+      return next;
     });
   };
   // 저장 및 다음 단계 이동
@@ -369,16 +422,41 @@ export default function CreatePage() {
                       onChange={(e) => handleProjectChange(idx, "projectSummary", e.target.value)}
                     />
                     <label className={styles.photoDrop}>
-                      <input type="file" accept="image/*" className={styles.hiddenFileInput} />
-                      <span className={styles.photoIcon}>🖼️</span>
-                      <span>이미지를 첨부해 주세요. (선택)</span>
+                      <input type="file" accept="image/*" className={styles.hiddenFileInput} onChange={(e) => handleProjectImageChange(idx, e)} />
+                      {projectImagePreviews[idx] ? (
+                        <img src={projectImagePreviews[idx]} alt="프로젝트 미리보기" className={styles.projectPreviewImage} />
+                      ) : (
+                        <>
+                          <span className={styles.photoIcon}>🖼️</span>
+                          <span>이미지를 첨부해 주세요. (선택)</span>
+                        </>
+                      )}
                     </label>
-                    <input
-                      className={styles.projectLinkInput}
-                      placeholder="링크를 붙여넣어 주세요."
-                      value={proj.projectLink || ""}
-                      onChange={(e) => handleProjectChange(idx, "projectLink", e.target.value)}
-                    />
+                    <div className={styles.projectLinksWrap}>
+                      {getProjectLinks(proj.projectLink).map((link, linkIdx) => (
+                        <div key={`${idx}-${linkIdx}`} className={styles.projectLinkRow}>
+                          <input
+                            className={styles.projectLinkInput}
+                            placeholder="링크를 붙여넣어 주세요."
+                            value={link}
+                            onChange={(e) => handleProjectLinkChange(idx, linkIdx, e.target.value)}
+                          />
+                          <button type="button" className={styles.projectLinkIconButton} onClick={() => addProjectLink(idx)} aria-label="링크 추가">
+                            ＋
+                          </button>
+                          {getProjectLinks(proj.projectLink).length > 1 && (
+                            <button
+                              type="button"
+                              className={styles.projectLinkIconButton}
+                              onClick={() => removeProjectLink(idx, linkIdx)}
+                              aria-label="링크 삭제"
+                            >
+                              －
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
                 <button className={styles.projectAdd} type="button" onClick={addProject}>
