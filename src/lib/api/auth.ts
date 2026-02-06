@@ -1,10 +1,12 @@
 import { buildApiUrl } from "@/lib/api/config";
+
 import {
   extractTokens,
   getAccessToken,
   setTokens,
   TokenPair,
 } from "@/lib/auth/tokens";
+const API_BASE = "https://api.onepageme.kr";
 
 export type LoginPayload = {
   email: string;
@@ -147,26 +149,6 @@ export async function requestGoogleLogin() {
   window.location.href = "https://api.onepageme.kr/oauth2/authorization/google";
 }
 
-export async function agreeGoogleSignup(payload: TokenPair & { agreed: boolean }) {
-  const res = await fetch(buildApiUrl("/api/v1/auth/sign-up/agree"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    const message = data?.message ?? "구글 회원가입 동의 처리에 실패했습니다.";
-    throw new Error(message);
-  }
-
-  return data;
-}
-
 export async function exchangeGoogleLoginCode(payload: {
   code: string;
   redirectUri: string;
@@ -190,4 +172,77 @@ export async function exchangeGoogleLoginCode(payload: {
   const tokens = extractTokens(data);
   setTokens(tokens);
   return data;
+}
+
+export async function fetchSignupInfo(): Promise<{ email: string; name?: string }> {
+  const accessToken = getAccessToken();
+  const res = await fetch(`${API_BASE}/api/signup/info`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    credentials: "include", // 필요 없으면 제거
+  });
+
+  if (!res.ok) throw new Error("signup info 조회 실패");
+
+  const json = await res.json();
+  // 백 응답 포맷에 맞춰 파싱 (예: json.data.email)
+  const email = json?.data?.email ?? json?.email ?? "";
+  const name = json?.data?.name ?? json?.name ?? undefined;
+
+  return { email, name };
+}
+
+export async function loginMemberZeroPassword(email_s: string) {
+  const res = await fetch(`${API_BASE}/api/members/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email : email_s, password: "0" }),
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    // 서버가 200인데 code로 실패를 주는 타입일 수도 있어서 아래도 같이 방어
+    const code = json?.code;
+    const message = json?.message ?? "로그인 실패";
+    throw new Error(code ? `${code}:${message}` : message);
+  }
+
+  // 200인데 code로 실패 주는 경우도 방어
+  if (json?.code && json.code !== "SUCCESS" && json.code !== "OK") {
+    const code = json.code;
+    const message = json?.message ?? "로그인 실패";
+    throw new Error(`${code}:${message}`);
+  }
+
+  return json;
+}
+export async function agreeGoogleSignup(payload: {
+  tempUserKey: string;
+  consents: {
+    SERVICE_TERMS: boolean;
+    PRIVACY_POLICY: boolean;
+    MARKETING: boolean;
+    SMS_NOTIFICATION: boolean;
+    EMAIL_NOTIFICATION: boolean;
+  };
+  name: string; // 백이 name 받으면 유지, 아니면 제거
+}) {
+  const res = await fetch(`${API_BASE}/api/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 403) {
+    const json = await res.json().catch(() => ({}));
+    const msg = json?.message ?? "필수 약관에 동의하지 않았습니다.";
+    throw new Error(msg);
+  }
+
+  if (!res.ok) throw new Error("동의 처리 실패");
+
+  return res.json().catch(() => ({}));
 }

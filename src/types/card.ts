@@ -1,24 +1,24 @@
 // src/types/card.ts
 
+// [UPDATED] 프로젝트 데이터 구조 변경
+export interface Project {
+  projectName: string;
+  projectSummary: string;
+  projectLink?: string; // 단일 링크 (GitHub 등)
+}
+
 export type Card = {
   id: string;
   name: string;
   role?: string;
   intro?: string;
-  profileImageUrl?: string; // 필요해지면 사용
+  profileImage?: string;
+  projects?: Project[];
 };
 
-// [NEW] 포트폴리오 페이지에서 사용하는 데이터 타입 정의
 export interface Link {
   title: string;
   url: string;
-}
-
-export interface Project {
-  title: string;
-  projectSummary: string;
-  image?: string;
-  links: Link[];
 }
 
 export interface PortfolioData {
