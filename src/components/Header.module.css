@@ -58,7 +58,10 @@
 .profileCircle {
   width: 32px;
   height: 32px;
-  background-color: #737373; /* 이미지의 회색 원 스타일 */
+  background-color: #f0f2f5;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 50%;
   border: none;
   cursor: pointer;

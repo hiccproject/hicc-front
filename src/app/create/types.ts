@@ -10,7 +10,7 @@ export interface Project {
 // 전체 포트폴리오 데이터 구조
 export interface PortfolioData {
   // Step 1
-  category: string;
+  category: "DEVELOPMENT" | "DESIGN" | "MARKETING" | "PLANNING" | "BUSINESS" | "MANAGEMENT" | "FINANCE" | "SERVICE" | "ENGINEERING" | "MEDIA" | "MEDICAL" | "OTHERS";
   subCategory: string;
   profileImg?: string;
   // Step 2
@@ -21,6 +21,7 @@ export interface PortfolioData {
   projects: Project[];
   // Step 4
   summaryIntro: string;
+  tags?: string[];
   // Step 5 (반드시 대문자)
   layoutType: "CARD" | "LIST" | "GRID";
 }

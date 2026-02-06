@@ -130,8 +130,41 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
   };
 }
 
-// --- 포트폴리오 생성 관련 함수 (기존 유지) ---
+// --- [추가 기능] 명함 생성 API 연결 ---
 
+export type PortfolioCategory =
+  | "DEVELOPMENT"
+  | "DESIGN"
+  | "MARKETING"
+  | "PLANNING"
+  | "BUSINESS"
+  | "MANAGEMENT"
+  | "FINANCE"
+  | "SERVICE"
+  | "ENGINEERING"
+  | "MEDIA"
+  | "MEDICAL"
+  | "OTHERS";
+
+export type PortfolioData = {
+  category: PortfolioCategory;
+  subCategory: string;
+  profileImg?: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  projects: { projectName: string; projectSummary: string; projectLink?: string }[];
+  summaryIntro: string;
+  tags?: string[];
+  layoutType: "CARD" | "LIST" | "GRID";
+};
+
+/**
+ * 단계별 포트폴리오 저장 함수
+ * @param step 현재 단계 (1~5)
+ * @param body 해당 단계의 데이터
+ * @param portfolioId 1단계 이후부터 필수인 ID
+ */
 export async function savePortfolioStep(
   step: number,
   body: any,
@@ -142,9 +175,17 @@ export async function savePortfolioStep(
     params.append("portfolioId", portfolioId.toString());
   }
 
-  return apiFetch<{ data: number }>(`/api/portfolios?${params.toString()}`, {
+  // 예: POST /api/portfolios/save?step=1
+  return apiFetch<{ data: number }>(`/api/portfolios/save?${params.toString()}`, {
     method: "POST",
     body: JSON.stringify(body),
-    auth: true, 
+    auth: true, // 토큰 자동 포함
+  });
+}
+
+export async function getPortfolioShareLink(portfolioId: number) {
+  return apiFetch<{ data: string }>(`/api/portfolios/${portfolioId}/share-link`, {
+    method: "GET",
+    auth: true,
   });
 }

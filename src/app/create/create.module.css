@@ -113,38 +113,65 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 120px;
 }
 
 .avatar {
-  width: 74px;
-  height: 74px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
-  background: #d4d4d4;
+  background: #eceff3;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  padding: 6px;
+  padding: 0;
   position: relative;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .avatarEdit {
-  width: 20px;
-  height: 20px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: #6e6e6e;
+  background: #4a4f58;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+.hiddenFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .profileName {
-  font-size: 14px;
-  font-weight: 600;
-  color: #2c2c2c;
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
 }
 
 .formRow {

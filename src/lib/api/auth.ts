@@ -31,6 +31,8 @@ export type GoogleLoginTokenResponse = {
   };
 };
 
+const SUCCESS_RESPONSE_CODE = "SUCCESS";
+
 async function parseJsonSafe(res: Response) {
   return res.json().catch(() => null);
 }
@@ -146,7 +148,11 @@ export async function deleteMemberAccount() {
 }
 
 export async function requestGoogleLogin() {
-  window.location.href = "https://api.onepageme.kr/oauth2/authorization/google";
+  const googleAuthStartUrl =
+    process.env.NEXT_PUBLIC_GOOGLE_AUTH_START_URL ??
+    "https://api.onepageme.kr/oauth2/authorization/google";
+
+  window.location.href = googleAuthStartUrl;
 }
 
 export async function exchangeGoogleLoginCode(payload: {
@@ -164,12 +170,16 @@ export async function exchangeGoogleLoginCode(payload: {
   });
 
   const data = (await parseJsonSafe(res)) as GoogleLoginTokenResponse | null;
-  if (!res.ok) {
+
+  if (!res.ok || data?.code !== SUCCESS_RESPONSE_CODE) {
     const message = data?.message ?? "구글 로그인에 실패했습니다.";
     throw new Error(message);
   }
 
   const tokens = extractTokens(data);
+  if (!tokens.accessToken || !tokens.refreshToken) {
+    throw new Error("토큰 발급에 실패했습니다.");
+  }
   setTokens(tokens);
   return data;
 }
