@@ -64,6 +64,10 @@ function getJobsByCategory(category: PortfolioCategory) {
 }
 
 export default function CreatePage() {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("CREATE PAGE LOADED - 2026-02-06 v2");
+  }
+
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
@@ -166,6 +170,10 @@ export default function CreatePage() {
     setIsSaving(true);
 
     try {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("HANDLE NEXT formData", formData);
+      }
+
       let body = {};
       // 단계별 데이터 매핑
       if (step === 1) {
@@ -188,6 +196,11 @@ export default function CreatePage() {
           tags: formData.tags || [],
         };
       }
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("PAGE body", body);
+      }
+
       // API 호출
       const res = await savePortfolioStep(step, body, portfolioId);
       // 1단계에서 받은 ID 저장 (이후 단계에서 필수)
@@ -224,7 +237,14 @@ export default function CreatePage() {
   const profileEditor = (
     <div className={styles.profileCard}>
       <label className={styles.avatar}>
-        <img src={profilePreview} alt="프로필 이미지" className={styles.avatarImage} />
+        <img
+          src={profilePreview || DEFAULT_PROFILE_IMG}
+          alt="프로필 이미지"
+          className={styles.avatarImage}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+          }}
+        />
         <span className={styles.avatarEdit}>✎</span>
         <input
           type="file"

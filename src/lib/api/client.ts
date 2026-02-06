@@ -45,6 +45,11 @@ export async function apiFetch<T>(url: string, options: ApiFetchOptions = {}): P
     ...(headers || {}),
   };
 
+  if (process.env.NODE_ENV !== "production") {
+    console.log("APIFETCH url", buildApiUrl(url));
+    console.log("APIFETCH options.body", rest.body);
+  }
+  
   let res = await fetch(buildApiUrl(url), {
     ...rest,
     headers: requestHeaders,
