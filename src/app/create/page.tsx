@@ -352,7 +352,7 @@ export default function CreatePage() {
         }
         await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
         alert("포트폴리오 발행이 완료되었습니다!");
-        router.push("/mypage");
+        router.push("/cards");
       }
     } catch (error) {
       console.error(error);
