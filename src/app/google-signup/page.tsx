@@ -1,4 +1,4 @@
-"use client";
+/**"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -161,4 +161,4 @@ export default function GoogleSignupPage() {
       />
     </div>
   );
-}
+} **/
