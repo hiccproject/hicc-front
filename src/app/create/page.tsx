@@ -4,15 +4,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-<<<<<<< HEAD
-import { getRecentPortfolioId, savePortfolioStep, PortfolioCategory, PortfolioData  } from "@/lib/api/cards";
-import Header from "@/components/Header";
-import styles from "./create.module.css";
-=======
 import Header from "@/components/Header";
 import styles from "./create.module.css";
 import { getPortfolioDetail, getPortfolioShareLink, savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
->>>>>>> 8545fc58cbf593928a45e69ef670fe4fea5ad381
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
 

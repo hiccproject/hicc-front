@@ -1,3 +1,4 @@
+/* ... 기존 상단 스타일 (bg, shell, body, pageTitle, form, row, label) 유지 ... */
 .bg {
   min-height: 100vh;
   background: #6e6e6e;
@@ -6,48 +7,47 @@
   justify-content: center;
   align-items: flex-start;
 }
-
 .shell {
-  width: min(1200px, 100%);
+  width: 100%;
+  max-width: 1200px; 
   background: #ffffff;
-  padding: 28px 28px 42px;
+  padding: 28px; /* 모바일 고려하여 패딩 조정 가능 */
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+  margin: 0 auto; /* 중앙 정렬 */
 }
-
 .body {
   padding-top: 42px;
   display: grid;
   place-items: center;
 }
-
 .pageTitle {
   margin: 0 0 28px;
   font-size: 20px;
   font-weight: 800;
   color: #111;
 }
-
 .form {
-  width: min(720px, 100%);
+  /* 폼 너비도 유동적으로 */
+  width: 100%;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
-
 .row {
   display: grid;
   grid-template-columns: 180px 1fr;
-  align-items: center;
+  align-items: flex-start; /* 버튼이 생겨서 높이가 달라질 수 있으므로 상단 정렬 */
   column-gap: 16px;
+  min-height: 44px; /* 최소 높이 보장 */
 }
-
 .label {
   font-size: 14px;
   font-weight: 700;
   color: #111;
   text-align: center;
+  padding-top: 13px; /* input 높이에 맞춰 중앙 정렬 보정 */
 }
-
 .input {
   width: 100%;
   height: 44px;
@@ -57,23 +57,26 @@
   font-size: 14px;
   outline: none;
 }
+.input:focus { border-color: #bdbdbd; }
+.input:disabled { background: #f5f5f5; color: #999; }
 
-.input:focus {
-  border-color: #bdbdbd;
+/* ✅ 수정됨: 이메일 입력을 위한 컨테이너 */
+.inputGroup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* 이메일 영역 */
+/* ✅ 수정됨: 이메일 입력란 레이아웃 (기존 유지) */
 .emailWrap {
   display: grid;
-  grid-template-columns: 1fr auto 140px 130px;
-  gap: 10px;
+  grid-template-columns: 1fr 20px 140px 130px; /* 기존과 비슷하게 넉넉한 공간 */
+  gap: 8px;
   align-items: center;
 }
 
-.at {
-  color: #888;
-  font-weight: 700;
-}
+.at { color: #888; font-weight: 700; text-align: center; }
 
 .domainBox {
   height: 44px;
@@ -84,16 +87,8 @@
   padding: 0 14px;
   background: #fafafa;
 }
-
-.domainText {
-  font-size: 14px;
-  color: #666;
-  font-weight: 700;
-}
-
-.domainInput {
-  background: #fff;
-}
+.domainText { font-size: 14px; color: #666; font-weight: 700; }
+.domainInput { background: #fff; }
 
 .select {
   height: 44px;
@@ -104,14 +99,74 @@
   background: #fff;
 }
 
-.helper {
-  grid-column: 2 / -1;
-  margin-top: 8px;
-  font-size: 12px;
-  color: #666;
+/* ✅ 추가됨: 인증번호 입력란 레이아웃 */
+.verifyWrap {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  gap: 8px;
 }
 
-/* 약관 박스 */
+.helper {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.verifiedMsg {
+  font-size: 13px;
+  color: #009944; /* 성공 색상 */
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* ✅ 버튼 스타일 (기존 버튼들과 조화) */
+.btn {
+  height: 48px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+.btnSmall {
+  height: 40px; /* input보다 살짝 작거나 비슷하게 */
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+
+/* 인증요청 버튼을 가득 채우기 */
+.fullWidthBtn {
+  width: 100%; 
+  margin-top: 4px;
+}
+
+.btnGhost { background: #fff; border-color: #cfcfcf; color: #111; }
+.btnPrimary { background: #262626; color: #fff; border-color: #262626; }
+.btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnOutline {
+  background: #fff;
+  border: 1px solid #d1d1d1;
+  color: #333;
+}
+.btnOutline:hover { background: #f7f7f7; }
+
+.btnDark {
+  background: #444;
+  color: #fff;
+}
+.btnDark:hover { background: #333; }
+
+/* 약관 박스 등 하단 스타일은 기존 유지 */
 .agreeBox {
   margin-top: 6px;
   background: #f6f6f6;
@@ -119,98 +174,53 @@
   padding: 12px 14px;
   border: 1px solid #eee;
 }
-
 .agreeRow {
   display: flex;
-  align-items: center;
   justify-content: space-between;
   padding: 10px 0;
 }
-
 .checkLabel {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #111;
+  display: flex; gap: 10px; font-size: 13px; font-weight: 600;
 }
-
 .viewBtn {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid #e1e1e1;
-  background: #fff;
-  font-size: 12px;
-  cursor: pointer;
+  height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #e1e1e1; background: #fff; font-size: 12px; cursor: pointer;
 }
-
-.viewBtn:hover {
-  border-color: #c7c7c7;
-}
-
-/* 하단 버튼 */
 .actions {
-  margin-top: 8px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  margin-top: 20px;
 }
+.modalText { font-size: 13px; line-height: 1.7; color: #333; }
 
-.btn {
-  height: 48px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  border: 1px solid transparent;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-}
+@media (max-width: 768px) {
+  .shell {
+    padding: 20px;
+  }
 
-.btnGhost {
-  background: #fff;
-  border-color: #cfcfcf;
-  color: #111;
-}
-
-.btnPrimary {
-  background: #262626;
-  border-color: #262626;
-  color: #fff;
-}
-
-.btnPrimary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* 모달 내부 텍스트 */
-.modalText {
-  font-size: 13px;
-  line-height: 1.7;
-  color: #333;
-}
-
-
-@media (max-width: 900px) {
   .row {
+    /* 라벨과 입력창을 위아래로 배치 */
     grid-template-columns: 1fr;
-    row-gap: 10px;
+    grid-template-rows: auto auto;
   }
 
   .label {
     text-align: left;
+    margin-bottom: 4px;
+    padding-top: 0;
   }
 
   .emailWrap {
-    grid-template-columns: 1fr;
+    /* 이메일 입력 그룹도 좁은 화면에선 세로로 흐르거나 비율 조정 */
+    grid-template-columns: 1fr; /* 1줄로 변경 */
+    gap: 8px;
+  }
+  
+  .verifyWrap {
+    grid-template-columns: 1fr 80px; /* 버튼 크기만 유지 */
   }
 
-  .helper {
-    grid-column: auto;
+  .actions {
+    grid-template-columns: 1fr; /* 버튼들을 세로로 쌓기 */
   }
 }

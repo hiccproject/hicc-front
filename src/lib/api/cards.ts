@@ -169,16 +169,12 @@ export type PortfolioData = {
   email: string;
   phone?: string;
   location?: string;
-<<<<<<< HEAD
-  projects: { projectName: string; projectSummary: string; projectLink?: string; projectImg? : string}[];
-=======
   projects: {
     projectName: string;
     projectSummary: string;
     projectLink?: string;
     projectImg?: string;
   }[];
->>>>>>> 8545fc58cbf593928a45e69ef670fe4fea5ad381
   summaryIntro: string;
   tags?: string[];
   layoutType: "CARD" | "LIST" | "GRID";

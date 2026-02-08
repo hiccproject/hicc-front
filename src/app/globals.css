@@ -1,3 +1,26 @@
+/* src/app/globals.css */
+
+/* 모든 요소가 패딩과 테두리를 포함한 크기로 계산되도록 설정 */
+* {
+  box-sizing: border-box;
+}
+
+/* 이미지가 부모 영역보다 커지는 것을 방지하고 비율 유지 */
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 전체 레이아웃의 기본 폰트 사이즈 조정 (선택사항: 모바일 가독성) */
+html {
+  font-size: 16px;
+}
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
 * {
   box-sizing: border-box;
 }
