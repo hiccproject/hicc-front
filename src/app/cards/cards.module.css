@@ -153,8 +153,10 @@
 }
 
 .stepInfo {
+  display: inline-block;
   font-size: 12px;
   color: #adb5bd;
+  margin-top: 14px;
 }
 
 /* 카드 내용 */
