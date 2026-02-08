@@ -229,3 +229,53 @@
     width: 100%;
   }
 }
+.cardActions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.cardActionBtn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #495057;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cardActionBtn:hover {
+  background: #f8f9fa;
+}
+
+.deleteBtn {
+  border-color: #ffd8d8;
+  color: #e03131;
+}
+
+.deleteBtn:hover {
+  background: #fff5f5;
+}
+
+.editBtn {
+  border-color: #d0ebff;
+  color: #1971c2;
+}
+
+.editBtn:hover {
+  background: #e7f5ff;
+}
+
+.retryBtn {
+  margin-top: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #343a40;
+  cursor: pointer;
+}

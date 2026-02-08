@@ -143,6 +143,25 @@ export type PortfolioData = {
   layoutType: "CARD" | "LIST" | "GRID";
 };
 
+export type PortfolioDetailData = {
+  id: number;
+  category: PortfolioCategory;
+  subCategory: string;
+  profileImg?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  projects?: {
+    projectName?: string;
+    projectSummary?: string;
+    projectLink?: string;
+    projectImg?: string;
+  }[];
+  summaryIntro?: string | null;
+  tags?: string[];
+  layoutType?: "CARD" | "LIST" | "GRID";
+};
+
 /**
  * 단계별 포트폴리오 저장 함수
  * @param step 현재 단계 (1~5)
@@ -170,6 +189,20 @@ export async function savePortfolioStep(
 export async function getPortfolioShareLink(portfolioId: number) {
   return apiFetch<{ data: string }>(`/api/portfolios/${portfolioId}/share-link`, {
     method: "GET",
+    auth: true,
+  });
+}
+
+export async function getPortfolioDetail(portfolioId: number) {
+  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${portfolioId}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function deletePortfolio(portfolioId: number) {
+  return apiFetch(`/api/portfolios/${portfolioId}`, {
+    method: "DELETE",
     auth: true,
   });
 }

@@ -2,10 +2,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./create.module.css";
-import { savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
+import { getPortfolioDetail, savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
 
@@ -54,7 +54,7 @@ const steps: StepMeta[] = [
   { id: 1, label: "직군 선택", headline: "직군을 선택해주세요" },
   { id: 2, label: "추가 정보 입력", headline: "추가 정보를 입력해주세요" },
   { id: 3, label: "프로젝트 첨부", headline: "프로젝트를 첨부해주세요" },
-  { id: 4, label: "소개글 입력", headline: "당신의 페이지를 요약하는 소개글을 써주세요" },
+  { id: 4, label: "태그와 소개글 입력", headline: "명함 태그와 소개글을 입력해주세요" },
 ];
 
 function normalizeImageSrc(payload: UploadImageResponse): string {
@@ -96,9 +96,11 @@ export default function CreatePage() {
   }
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>(1);
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(false);
   const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
   const [profileName, setProfileName] = useState("회원");
   const [tagInput, setTagInput] = useState("");
@@ -116,6 +118,65 @@ export default function CreatePage() {
     tags: [],
     layoutType: "CARD",
   });
+
+  const isEditMode = searchParams.get("mode") === "edit";
+  const requestedStep = Number(searchParams.get("step") || "1");
+
+  useEffect(() => {
+    const qsPortfolioId = Number(searchParams.get("portfolioId") || "0");
+    const normalizedStep = requestedStep >= 1 && requestedStep <= 4 ? (requestedStep as Step) : 1;
+
+    if (qsPortfolioId > 0) {
+      setPortfolioId(qsPortfolioId);
+      setStep(normalizedStep);
+    }
+  }, [requestedStep, searchParams]);
+
+  useEffect(() => {
+    const loadPortfolioDetail = async () => {
+      if (!portfolioId || !isEditMode) return;
+
+      try {
+        setIsHydrating(true);
+        const response = await getPortfolioDetail(portfolioId);
+        const detail = response?.data;
+        if (!detail) return;
+
+        setFormData((prev) => ({
+          ...prev,
+          category: detail.category || prev.category,
+          subCategory: detail.subCategory || prev.subCategory,
+          profileImg: detail.profileImg || prev.profileImg,
+          email: detail.email || "",
+          phone: detail.phone || "",
+          location: detail.location || "",
+          projects:
+            detail.projects && detail.projects.length > 0
+              ? detail.projects.map((project) => ({
+                  projectName: project.projectName || "",
+                  projectSummary: project.projectSummary || "",
+                  projectLink: project.projectLink || "",
+                  projectImg: project.projectImg || "",
+                }))
+              : prev.projects,
+          summaryIntro: detail.summaryIntro || "",
+          tags: detail.tags || [],
+          layoutType: detail.layoutType || prev.layoutType,
+        }));
+
+        if (detail.profileImg) {
+          setProfilePreview(detail.profileImg);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("수정할 명함 정보를 불러오지 못했습니다.");
+      } finally {
+        setIsHydrating(false);
+      }
+    };
+
+    loadPortfolioDetail();
+  }, [isEditMode, portfolioId]);
 
   useEffect(() => {
     const profile = getStoredProfile();
@@ -343,6 +404,38 @@ export default function CreatePage() {
         setPortfolioId(res.data);
       }
 
+      if (isEditMode && nextPortfolioId) {
+        if (step === 1) {
+          if (!formData.email.trim()) {
+            alert("이메일은 필수 입력 항목입니다.");
+            return;
+          }
+
+          await savePortfolioStep(2, {
+            email: formData.email.trim(),
+            phone: formData.phone?.trim() || null,
+            location: formData.location?.trim() || null,
+          }, nextPortfolioId);
+          await savePortfolioStep(3, {
+            projects: formData.projects.map((project) => ({
+              ...project,
+              projectLink: getProjectLinks(project.projectLink)
+                .map((link) => link.trim())
+                .filter(Boolean)
+                .join("\n"),
+            })),
+          }, nextPortfolioId);
+          await savePortfolioStep(4, {
+            summaryIntro: formData.summaryIntro,
+            tags: formData.tags || [],
+          }, nextPortfolioId);
+          await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
+          alert("명함이 수정되었습니다!");
+          router.push("/cards");
+          return;
+        }
+      }
+
       if (step < 4) {
         setStep((prev) => (prev + 1) as Step);
         window.scrollTo(0, 0);
@@ -362,9 +455,9 @@ export default function CreatePage() {
     }
   };
   // 헤더 텍스트 등 UI 헬퍼
-  const stepHeadline = useMemo(() => steps.find((s) => s.id === step)?.headline ?? "", [step]);
-  const stepNumber = useMemo(() => String(step).padStart(2, "0"), [step]);
-  const canGoPrev = step > 1;
+  const stepHeadline = useMemo(() => (isEditMode ? "명함 정보를 한 번에 수정해주세요" : steps.find((s) => s.id === step)?.headline ?? ""), [isEditMode, step]);
+  const stepNumber = useMemo(() => (isEditMode ? "EDIT" : String(step).padStart(2, "0")), [isEditMode, step]);
+  const canGoPrev = step > 1 && !isEditMode;
   const subCategoryOptions = useMemo(() => getJobsByCategory(formData.category), [formData.category]);
 
   const profileEditor = (
@@ -395,8 +488,8 @@ export default function CreatePage() {
       <main className={styles.shell}>
         <Header />
 
-        <section className={styles.body}>
-          <aside className={styles.stepper}>
+        <section className={`${styles.body} ${isEditMode ? styles.bodySingle : ""}`}>
+          {!isEditMode && <aside className={styles.stepper}>
             <div className={styles.stepLine} />
             {steps.map((item) => (
               <div key={item.id} className={styles.stepItem}>
@@ -407,7 +500,7 @@ export default function CreatePage() {
                 </div>
               </div>
             ))}
-          </aside>
+          </aside>}
 
           <div className={styles.content}>
             <div className={styles.stepHeader}>
@@ -415,7 +508,7 @@ export default function CreatePage() {
               <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
             </div>
             {/* Step 1: 직군 */}
-            {step === 1 && (
+            {(step === 1 || isEditMode) && (
               <div className={styles.stepPanel}>
                 {profileEditor}
                 <div className={styles.formRow}>
@@ -437,7 +530,7 @@ export default function CreatePage() {
               </div>
             )}
             {/* Step 2: 정보 */}
-            {step === 2 && (
+            {(step === 2 || isEditMode) && (
               <div className={styles.stepPanelColumn}>
                 <div className={`${styles.stepPanel} ${styles.step2Panel}`}>
                   {profileEditor}
@@ -466,7 +559,7 @@ export default function CreatePage() {
               </div>
             )}
             {/* Step 3: 프로젝트 */}
-            {step === 3 && (
+            {(step === 3 || isEditMode) && (
               <div className={styles.projectPanel}>
                 {formData.projects.map((proj, idx) => (
                   <div key={idx} className={styles.projectCard}>
@@ -529,7 +622,7 @@ export default function CreatePage() {
               </div>
             )}
             {/* Step 4: 소개 */}
-            {step === 4 && (
+            {(step === 4 || isEditMode) && (
               <div className={styles.bioPanel}>
                 <textarea
                   name="summaryIntro"
@@ -568,21 +661,23 @@ export default function CreatePage() {
         </section>
 
         <div className={styles.navControls}>
-          <button
-            className={`${styles.navButton} ${styles.navButtonGhost}`}
-            type="button"
-            onClick={() => setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev))}
-            disabled={!canGoPrev || isSaving}
-          >
-            ←
-          </button>
+          {!isEditMode ? (
+            <button
+              className={`${styles.navButton} ${styles.navButtonGhost}`}
+              type="button"
+              onClick={() => setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev))}
+              disabled={!canGoPrev || isSaving || isHydrating}
+            >
+              ←
+            </button>
+          ) : <span />}
           <button
             className={`${styles.navButton} ${styles.navButtonSolid} ${step === 4 ? styles.navButtonDone : ""}`}
             type="button"
             onClick={handleNext}
-            disabled={isSaving}
+            disabled={isSaving || isHydrating}
           >
-            {isSaving ? "저장 중..." : step === 4 ? "✓" : "→"}
+            {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 4 ? "✓" : "→"}
           </button>
         </div>
       </main>
