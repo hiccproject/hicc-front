@@ -186,6 +186,29 @@
   gap: 12px;
 }
 
+.stepPanelColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.step2Panel {
+  align-items: flex-start;
+}
+
+.textInputWide {
+  width: min(620px, 100%);
+}
+
+
+.step2FormStack {
+  width: min(680px, 100%);
+}
+
+.step2FormStack .textInputWide {
+  width: 100%;
+}
+
 .selectBox {
   min-width: 90px;
   height: 38px;

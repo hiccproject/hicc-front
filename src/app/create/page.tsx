@@ -413,9 +413,9 @@ export default function CreatePage() {
             {/* Step 2: 정보 */}
             {step === 2 && (
               <div className={styles.stepPanelColumn}>
-                <div className={styles.stepPanel}>
+                <div className={`${styles.stepPanel} ${styles.step2Panel}`}>
                   {profileEditor}
-                  <div className={styles.formStack}>
+                  <div className={`${styles.formStack} ${styles.step2FormStack}`}>
                     <div className={styles.formRow}>
                       <select name="category" value={formData.category} onChange={handleCategoryChange} className={styles.selectBox}>
                         {CATEGORY_OPTIONS.map((option) => (
