@@ -1,11 +1,12 @@
 // 명함 생성 페이지
+//src/app/create/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getRecentPortfolioId, savePortfolioStep, PortfolioCategory, PortfolioData  } from "@/lib/api/cards";
 import Header from "@/components/Header";
 import styles from "./create.module.css";
-import { savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
 

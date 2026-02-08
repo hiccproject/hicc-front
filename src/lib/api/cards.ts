@@ -26,6 +26,43 @@ function getSafeToken(): string | null {
   return localStorage.getItem("accessToken");
 }
 
+// 내 포트폴리오 ID와 상태를 조회하는 함수
+export async function getRecentPortfolioId(): Promise<{ id: number; status: string; lastStep: number } | null> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  if (!token) return null;
+
+  try {
+    // 내 명함 목록 조회
+    const res = await fetch("/api/portfolios/my", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    const list: any[] = Array.isArray(json) ? json : json.data || [];
+
+    if (list.length === 0) return null;
+
+    // 1. DRAFT(작성 중) 상태 우선 검색
+    const draft = list.find((item) => item.status === "DRAFT");
+    if (draft) {
+      return { id: draft.id, status: draft.status, lastStep: draft.lastStep || 1 };
+    }
+
+    // 2. DRAFT가 없다면 최신 PUBLISHED 명함 ID 반환 (수정 모드 대비)
+    // 날짜 내림차순 정렬
+    const sorted = list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    if (sorted.length > 0) {
+      const latest = sorted[0];
+      return { id: latest.id, status: latest.status, lastStep: latest.lastStep || 5 };
+    }
+
+    return null;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
 /**
  * '내 명함' 선정 로직
  * 1. 토큰이 없으면 API 호출 안 함 (null 반환)
@@ -34,7 +71,7 @@ function getSafeToken(): string | null {
  * - 없으면 PUBLISHED 상태 중 가장 최신 것
  * 3. 실패하거나 데이터 없으면 null
  */
-async function fetchMyCard(): Promise<Card | null> {
+export async function fetchMyCard(): Promise<Card | null> {
   try {
     // ✅ auth:true로 호출하면 Authorization 자동 + 401/403면 refresh 시도
     const json = await apiFetch<any>("/api/portfolios/my", {
@@ -132,7 +169,7 @@ export type PortfolioData = {
   email: string;
   phone?: string;
   location?: string;
-  projects: { projectName: string; projectSummary: string; projectLink?: string }[];
+  projects: { projectName: string; projectSummary: string; projectLink?: string; projectImg? : string}[];
   summaryIntro: string;
   tags?: string[];
   layoutType: "CARD" | "LIST" | "GRID";
@@ -144,21 +181,18 @@ export type PortfolioData = {
  * @param body 해당 단계의 데이터
  * @param portfolioId 1단계 이후부터 필수인 ID
  */
-export async function savePortfolioStep(
-  step: number,
-  body: any,
-  portfolioId?: number | null
-) {
+export async function savePortfolioStep(step: number, body: any, portfolioId?: number | null) {
   const params = new URLSearchParams({ step: step.toString() });
-  if (portfolioId) {
+
+  // ✅ falsy 체크로 누락되지 않게
+  if (portfolioId !== null && portfolioId !== undefined) {
     params.append("portfolioId", portfolioId.toString());
   }
 
-  // 예: POST /api/portfolios/save?step=1
   return apiFetch<{ data: number }>(`/api/portfolios/save?${params.toString()}`, {
     method: "POST",
     body: JSON.stringify(body),
-    auth: true, // 토큰 자동 포함
+    auth: true,
   });
 }
 

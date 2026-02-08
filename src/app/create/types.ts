@@ -5,6 +5,7 @@ export interface Project {
   projectName: string;
   projectSummary: string;
   projectLink?: string;
+  projectImg?: string; // [추가] API 명세 반영: 이미지 URL
 }
 
 // 전체 포트폴리오 데이터 구조
