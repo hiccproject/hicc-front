@@ -194,7 +194,18 @@ export async function getPortfolioShareLink(portfolioId: number) {
 }
 
 export async function getPortfolioDetail(slug: string) {
-  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${encodeURIComponent(slug)}`, {
+  const normalizedSlug = slug
+    .trim()
+    .replace(/\/+$/, "")
+    .split("/")
+    .filter(Boolean)
+    .pop();
+
+  if (!normalizedSlug) {
+    throw new Error("유효한 포트폴리오 슬러그가 없습니다.");
+  }
+
+  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${encodeURIComponent(normalizedSlug)}`, {
     method: "GET",
     auth: true,
   });
