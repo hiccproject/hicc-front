@@ -25,6 +25,8 @@ type UploadImageResponse =
       imageUrl?: string;
     };
 
+const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_BASE_URL ?? "";
+
 type CategoryOption = {
   value: PortfolioCategory;
   label: string;
@@ -55,9 +57,33 @@ const steps: StepMeta[] = [
   { id: 4, label: "소개글 입력", headline: "당신의 페이지를 요약하는 소개글을 써주세요" },
 ];
 
-function extractImageUrl(payload: UploadImageResponse): string {
-  if (typeof payload === "string") return payload;
-  return payload?.data || payload?.url || payload?.imageUrl || "";
+function normalizeImageSrc(payload: UploadImageResponse): string {
+  if (!payload) return "";
+
+  const raw = typeof payload === "string" ? payload : payload?.imageUrl ?? payload?.url ?? payload?.data ?? "";
+  const normalized = raw.trim();
+
+  if (!normalized) return "";
+
+  if (
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("blob:") ||
+    normalized.startsWith("data:")
+  ) {
+    return normalized;
+  }
+
+  const matchedUrl = normalized.match(/https?:\/\/\S+/)?.[0];
+  if (matchedUrl) {
+    return matchedUrl;
+  }
+
+  if (S3_BASE_URL) {
+    return `${S3_BASE_URL.replace(/\/$/, "")}/${normalized.replace(/^\//, "")}`;
+  }
+
+  return "";
 }
 
 function getJobsByCategory(category: PortfolioCategory) {
@@ -142,7 +168,7 @@ export default function CreatePage() {
 
     try {
       const uploaded = (await uploadImage(file)) as UploadImageResponse;
-      const uploadedUrl = extractImageUrl(uploaded);
+      const uploadedUrl = normalizeImageSrc(uploaded);
       const finalUrl = uploadedUrl || DEFAULT_PROFILE_IMG;
 
       setFormData((prev) => ({ ...prev, profileImg: finalUrl }));
@@ -241,7 +267,7 @@ export default function CreatePage() {
 
     try {
       const uploaded = (await uploadImage(file)) as UploadImageResponse;
-      const uploadedUrl = extractImageUrl(uploaded);
+      const uploadedUrl = normalizeImageSrc(uploaded);
       if (!uploadedUrl) {
         throw new Error("업로드된 이미지 URL이 비어있습니다.");
       }
