@@ -186,6 +186,49 @@
   gap: 12px;
 }
 
+.stepPanelColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.step2Panel {
+  align-items: flex-start;
+}
+
+.textInputWide {
+  width: min(620px, 100%);
+}
+
+
+.step2FormStack {
+  width: min(445px, 100%);
+  gap: 10px;
+}
+
+.step2FormStack .textInputWide {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #dddddd;
+  background: #f9f9f9;
+  padding: 0 16px;
+  font-size: 14px;
+  color: #1f1f1f;
+  letter-spacing: -0.01em;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.step2FormStack .textInputWide::placeholder {
+  color: #c6c6c6;
+}
+
+.step2FormStack .textInputWide:focus {
+  outline: none;
+  border-color: #cfcfcf;
+  background: #ffffff;
+}
+
 .selectBox {
   min-width: 90px;
   height: 38px;
@@ -358,6 +401,36 @@
 
 .bioPanel {
   max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.subStepCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subStepHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subStepNumber {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6f80ff;
+}
+
+.subStepTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1f1f1f;
 }
 
 .bioInput {
@@ -439,4 +512,62 @@
     position: static;
     margin-top: 24px;
   }
+}
+
+.tagEditor {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tagInput {
+  flex: 1;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid #e1e1e1;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.tagAddButton {
+  border: 1px solid #d3d8df;
+  border-radius: 999px;
+  height: 38px;
+  padding: 0 14px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagChip {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 13px;
+  background: #f1f4ff;
+  color: #3651c8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.deleteProjectButton {
+  width: 30px;
+  height: 30px;
+  align-self: flex-end;
+  border: none;
+  border-radius: 50%;
+  background: #f1f3f5;
+  cursor: pointer;
+}
+
+.bodySingle {
+  grid-template-columns: 1fr;
 }

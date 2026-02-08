@@ -1,12 +1,13 @@
 //src/app/cards/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./cards.module.css";
 import Header from "@/components/Header";
 import { getAccessToken } from "@/lib/auth/tokens";
+import { deletePortfolio } from "@/lib/api/cards";
 
 // API 응답 데이터 타입 정의
 type PortfolioItem = {
@@ -83,6 +84,25 @@ export default function CardsPage() {
   }, [router]);
 
   // 날짜 포맷팅 함수
+
+
+  const handleDelete = async (e: MouseEvent<HTMLButtonElement>, portfolioId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmed = window.confirm("이 명함을 삭제하시겠어요? 삭제 후 복구할 수 없습니다.");
+    if (!confirmed) return;
+
+    try {
+      await deletePortfolio(portfolioId);
+      setPortfolios((prev) => prev.filter((item) => item.id !== portfolioId));
+      alert("명함이 삭제되었습니다.");
+    } catch (err) {
+      console.error("명함 삭제 에러:", err);
+      alert("명함 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -153,6 +173,26 @@ export default function CardsPage() {
 
             return (
               <Link key={item.id} href={cardLink} className={styles.card}>
+                <div className={styles.cardActions}>
+                  <button
+                    type="button"
+                    className={`${styles.cardActionBtn} ${styles.editBtn}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      router.push(`/create?portfolioId=${item.id}&mode=edit`);
+                    }}
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.cardActionBtn} ${styles.deleteBtn}`}
+                    onClick={(e) => handleDelete(e, item.id)}
+                  >
+                    삭제
+                  </button>
+                </div>
                 <div className={styles.cardHeader}>
                   <span className={`${styles.badge} ${isDraft ? styles.badgeDraft : styles.badgePublished}`}>
                     {isDraft ? "작성 중" : "공개됨"}

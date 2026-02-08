@@ -4,9 +4,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+<<<<<<< HEAD
 import { getRecentPortfolioId, savePortfolioStep, PortfolioCategory, PortfolioData  } from "@/lib/api/cards";
 import Header from "@/components/Header";
 import styles from "./create.module.css";
+=======
+import Header from "@/components/Header";
+import styles from "./create.module.css";
+import { getPortfolioDetail, getPortfolioShareLink, savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
+>>>>>>> 8545fc58cbf593928a45e69ef670fe4fea5ad381
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
 
@@ -25,6 +31,8 @@ type UploadImageResponse =
       url?: string;
       imageUrl?: string;
     };
+
+const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_BASE_URL ?? "";
 
 type CategoryOption = {
   value: PortfolioCategory;
@@ -53,12 +61,36 @@ const steps: StepMeta[] = [
   { id: 1, label: "직군 선택", headline: "직군을 선택해주세요" },
   { id: 2, label: "추가 정보 입력", headline: "추가 정보를 입력해주세요" },
   { id: 3, label: "프로젝트 첨부", headline: "프로젝트를 첨부해주세요" },
-  { id: 4, label: "소개글 입력", headline: "당신의 페이지를 요약하는 소개글을 써주세요" },
+  { id: 4, label: "태그와 소개글 입력", headline: "명함 태그와 소개글을 입력해주세요" },
 ];
 
-function extractImageUrl(payload: UploadImageResponse): string {
-  if (typeof payload === "string") return payload;
-  return payload?.data || payload?.url || payload?.imageUrl || "";
+function normalizeImageSrc(payload: UploadImageResponse): string {
+  if (!payload) return "";
+
+  const raw = typeof payload === "string" ? payload : payload?.imageUrl ?? payload?.url ?? payload?.data ?? "";
+  const normalized = raw.trim();
+
+  if (!normalized) return "";
+
+  if (
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("blob:") ||
+    normalized.startsWith("data:")
+  ) {
+    return normalized;
+  }
+
+  const matchedUrl = normalized.match(/https?:\/\/\S+/)?.[0];
+  if (matchedUrl) {
+    return matchedUrl;
+  }
+
+  if (S3_BASE_URL) {
+    return `${S3_BASE_URL.replace(/\/$/, "")}/${normalized.replace(/^\//, "")}`;
+  }
+
+  return "";
 }
 
 function getJobsByCategory(category: PortfolioCategory) {
@@ -71,9 +103,11 @@ export default function CreatePage() {
   }
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>(1);
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(false);
   const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
   const [profileName, setProfileName] = useState("회원");
   const [tagInput, setTagInput] = useState("");
@@ -86,11 +120,77 @@ export default function CreatePage() {
     email: "",
     phone: "",
     location: "",
-    projects: [{ projectName: "", projectSummary: "", projectLink: "" }],
+    projects: [{ projectName: "", projectSummary: "", projectLink: "", projectImg: "" }],
     summaryIntro: "",
     tags: [],
     layoutType: "CARD",
   });
+
+  const isEditMode = searchParams.get("mode") === "edit";
+  const requestedStep = Number(searchParams.get("step") || "1");
+
+  useEffect(() => {
+    const qsPortfolioId = Number(searchParams.get("portfolioId") || "0");
+    const normalizedStep = requestedStep >= 1 && requestedStep <= 4 ? (requestedStep as Step) : 1;
+
+    if (qsPortfolioId > 0) {
+      setPortfolioId(qsPortfolioId);
+      setStep(normalizedStep);
+    }
+  }, [requestedStep, searchParams]);
+
+  useEffect(() => {
+    const loadPortfolioDetail = async () => {
+      if (!portfolioId || !isEditMode) return;
+
+      try {
+        setIsHydrating(true);
+        const shareLinkResponse = await getPortfolioShareLink(portfolioId);
+        const slug = shareLinkResponse?.data?.trim();
+
+        if (!slug) {
+          throw new Error("슬러그를 가져오지 못했습니다.");
+        }
+
+        const response = await getPortfolioDetail(slug);
+        const detail = response?.data;
+        if (!detail) return;
+
+        setFormData((prev) => ({
+          ...prev,
+          category: detail.category || prev.category,
+          subCategory: detail.subCategory || prev.subCategory,
+          profileImg: detail.profileImg || prev.profileImg,
+          email: detail.email || "",
+          phone: detail.phone || "",
+          location: detail.location || "",
+          projects:
+            detail.projects && detail.projects.length > 0
+              ? detail.projects.map((project) => ({
+                  projectName: project.projectName || "",
+                  projectSummary: project.projectSummary || "",
+                  projectLink: project.projectLink || "",
+                  projectImg: project.projectImg || "",
+                }))
+              : prev.projects,
+          summaryIntro: detail.summaryIntro || "",
+          tags: detail.tags || [],
+          layoutType: detail.layoutType || prev.layoutType,
+        }));
+
+        if (detail.profileImg) {
+          setProfilePreview(detail.profileImg);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("수정할 명함 정보를 불러오지 못했습니다.");
+      } finally {
+        setIsHydrating(false);
+      }
+    };
+
+    loadPortfolioDetail();
+  }, [isEditMode, portfolioId]);
 
   useEffect(() => {
     const profile = getStoredProfile();
@@ -105,6 +205,13 @@ export default function CreatePage() {
       setFormData((prev) => ({ ...prev, profileImg: savedProfileImg }));
     }
   }, []);
+
+  useEffect(() => {
+    setProjectImagePreviews((prev) => {
+      const next = formData.projects.map((project, index) => project.projectImg || prev[index] || "");
+      return next.length > 0 ? next : [""];
+    });
+  }, [formData.projects]);
   // 입력 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -136,7 +243,7 @@ export default function CreatePage() {
 
     try {
       const uploaded = (await uploadImage(file)) as UploadImageResponse;
-      const uploadedUrl = extractImageUrl(uploaded);
+      const uploadedUrl = normalizeImageSrc(uploaded);
       const finalUrl = uploadedUrl || DEFAULT_PROFILE_IMG;
 
       setFormData((prev) => ({ ...prev, profileImg: finalUrl }));
@@ -172,7 +279,7 @@ export default function CreatePage() {
   const addProject = () => {
     setFormData((prev) => ({
       ...prev,
-      projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "" }],
+      projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "", projectImg: "" }],
     }));
     setProjectImagePreviews((prev) => [...prev, ""]);
   };
@@ -189,17 +296,16 @@ export default function CreatePage() {
   };
 
   const getProjectLinks = (projectLink?: string) => {
-    const normalized = (projectLink || "")
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    if (projectLink === undefined || projectLink === null || projectLink === "") {
+      return [""];
+    }
 
-    return normalized.length > 0 ? normalized : [""];
+    const links = projectLink.split("\n").map((item) => item.trim());
+    return links.length > 0 ? links : [""];
   };
 
   const updateProjectLinks = (projectIndex: number, links: string[]) => {
-    const normalized = links.map((item) => item.trim()).filter(Boolean).join("\n");
-    handleProjectChange(projectIndex, "projectLink", normalized);
+    handleProjectChange(projectIndex, "projectLink", links.join("\n"));
   };
 
   const addProjectLink = (projectIndex: number) => {
@@ -223,7 +329,7 @@ export default function CreatePage() {
     updateProjectLinks(projectIndex, nextLinks);
   };
 
-  const handleProjectImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectImageChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -233,6 +339,24 @@ export default function CreatePage() {
       next[index] = localPreview;
       return next;
     });
+
+    try {
+      const uploaded = (await uploadImage(file)) as UploadImageResponse;
+      const uploadedUrl = normalizeImageSrc(uploaded);
+      if (!uploadedUrl) {
+        throw new Error("업로드된 이미지 URL이 비어있습니다.");
+      }
+      handleProjectChange(index, "projectImg", uploadedUrl);
+      setProjectImagePreviews((prev) => {
+        const next = [...prev];
+        next[index] = uploadedUrl;
+        return next;
+      });
+    } catch (error) {
+      console.error(error);
+      handleProjectChange(index, "projectImg", "");
+      alert("프로젝트 이미지 업로드에 실패했습니다.");
+    }
   };
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
@@ -253,13 +377,27 @@ export default function CreatePage() {
           profileImg: formData.profileImg || DEFAULT_PROFILE_IMG,
         };
       } else if (step === 2) {
+        const normalizedEmail = formData.email.trim();
+        if (!normalizedEmail) {
+          alert("이메일은 필수 입력 항목입니다.");
+          return;
+        }
+
         body = {
-          email: formData.email,
-          phone: formData.phone,
-          location: formData.location,
+          email: normalizedEmail,
+          phone: formData.phone?.trim() || null,
+          location: formData.location?.trim() || null,
         };
       } else if (step === 3) {
-        body = { projects: formData.projects };
+        body = {
+          projects: formData.projects.map((project) => ({
+            ...project,
+            projectLink: getProjectLinks(project.projectLink)
+              .map((link) => link.trim())
+              .filter(Boolean)
+              .join("\n"),
+          })),
+        };
       } else {
         body = {
           summaryIntro: formData.summaryIntro,
@@ -280,6 +418,38 @@ export default function CreatePage() {
         setPortfolioId(res.data);
       }
 
+      if (isEditMode && nextPortfolioId) {
+        if (step === 1) {
+          if (!formData.email.trim()) {
+            alert("이메일은 필수 입력 항목입니다.");
+            return;
+          }
+
+          await savePortfolioStep(2, {
+            email: formData.email.trim(),
+            phone: formData.phone?.trim() || null,
+            location: formData.location?.trim() || null,
+          }, nextPortfolioId);
+          await savePortfolioStep(3, {
+            projects: formData.projects.map((project) => ({
+              ...project,
+              projectLink: getProjectLinks(project.projectLink)
+                .map((link) => link.trim())
+                .filter(Boolean)
+                .join("\n"),
+            })),
+          }, nextPortfolioId);
+          await savePortfolioStep(4, {
+            summaryIntro: formData.summaryIntro,
+            tags: formData.tags || [],
+          }, nextPortfolioId);
+          await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
+          alert("명함이 수정되었습니다!");
+          router.push("/cards");
+          return;
+        }
+      }
+
       if (step < 4) {
         setStep((prev) => (prev + 1) as Step);
         window.scrollTo(0, 0);
@@ -289,7 +459,7 @@ export default function CreatePage() {
         }
         await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
         alert("포트폴리오 발행이 완료되었습니다!");
-        router.push("/mypage");
+        router.push("/cards");
       }
     } catch (error) {
       console.error(error);
@@ -299,9 +469,9 @@ export default function CreatePage() {
     }
   };
   // 헤더 텍스트 등 UI 헬퍼
-  const stepHeadline = useMemo(() => steps.find((s) => s.id === step)?.headline ?? "", [step]);
-  const stepNumber = useMemo(() => String(step).padStart(2, "0"), [step]);
-  const canGoPrev = step > 1;
+  const stepHeadline = useMemo(() => (isEditMode ? "명함 정보를 한 번에 수정해주세요" : steps.find((s) => s.id === step)?.headline ?? ""), [isEditMode, step]);
+  const stepNumber = useMemo(() => (isEditMode ? "EDIT" : String(step).padStart(2, "0")), [isEditMode, step]);
+  const canGoPrev = step > 1 && !isEditMode;
   const subCategoryOptions = useMemo(() => getJobsByCategory(formData.category), [formData.category]);
 
   const profileEditor = (
@@ -332,8 +502,8 @@ export default function CreatePage() {
       <main className={styles.shell}>
         <Header />
 
-        <section className={styles.body}>
-          <aside className={styles.stepper}>
+        <section className={`${styles.body} ${isEditMode ? styles.bodySingle : ""}`}>
+          {!isEditMode && <aside className={styles.stepper}>
             <div className={styles.stepLine} />
             {steps.map((item) => (
               <div key={item.id} className={styles.stepItem}>
@@ -344,15 +514,17 @@ export default function CreatePage() {
                 </div>
               </div>
             ))}
-          </aside>
+          </aside>}
 
           <div className={styles.content}>
-            <div className={styles.stepHeader}>
-              <span className={styles.stepNumber}>{stepNumber}</span>
-              <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
-            </div>
+            {(isEditMode || step !== 4) && (
+              <div className={styles.stepHeader}>
+                <span className={styles.stepNumber}>{stepNumber}</span>
+                <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
+              </div>
+            )}
             {/* Step 1: 직군 */}
-            {step === 1 && (
+            {(step === 1 && !isEditMode) && (
               <div className={styles.stepPanel}>
                 {profileEditor}
                 <div className={styles.formRow}>
@@ -374,11 +546,11 @@ export default function CreatePage() {
               </div>
             )}
             {/* Step 2: 정보 */}
-            {step === 2 && (
+            {(step === 2 || isEditMode) && (
               <div className={styles.stepPanelColumn}>
-                <div className={styles.stepPanel}>
+                <div className={`${styles.stepPanel} ${styles.step2Panel}`}>
                   {profileEditor}
-                  <div className={styles.formStack}>
+                  <div className={`${styles.formStack} ${styles.step2FormStack}`}>
                     <div className={styles.formRow}>
                       <select name="category" value={formData.category} onChange={handleCategoryChange} className={styles.selectBox}>
                         {CATEGORY_OPTIONS.map((option) => (
@@ -396,14 +568,14 @@ export default function CreatePage() {
                       </select>
                     </div>
                     <input name="email" className={styles.textInputWide} placeholder="이메일을 입력해주세요." value={formData.email} onChange={handleChange} />
-                    <input name="phone" className={styles.textInputWide} placeholder="전화번호를 입력해주세요. (선택)" value={formData.phone} onChange={handleChange} />
+                    <input name="phone" className={styles.textInputWide} placeholder="전화번호를 입력해주세요. (선택, 010-0000-0000 형식으로 작성해주세요.)" value={formData.phone} onChange={handleChange} />
                     <input name="location" className={styles.textInputWide} placeholder="위치를 입력해주세요. (선택)" value={formData.location} onChange={handleChange} />
                   </div>
                 </div>
               </div>
             )}
             {/* Step 3: 프로젝트 */}
-            {step === 3 && (
+            {(step === 3 || isEditMode) && (
               <div className={styles.projectPanel}>
                 {formData.projects.map((proj, idx) => (
                   <div key={idx} className={styles.projectCard}>
@@ -466,60 +638,75 @@ export default function CreatePage() {
               </div>
             )}
             {/* Step 4: 소개 */}
-            {step === 4 && (
+            {(step === 4 || isEditMode) && (
               <div className={styles.bioPanel}>
-                <textarea
-                  name="summaryIntro"
-                  className={styles.bioInput}
-                  placeholder="당신의 명함에 대해 설명해주세요. (선택)"
-                  value={formData.summaryIntro}
-                  onChange={handleChange}
-                />
-              <div className={styles.tagEditor}>
-                  <input
-                    className={styles.tagInput}
-                    placeholder="태그를 입력하고 Enter를 눌러주세요. (최대 5개)"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                  />
-                  <button type="button" className={styles.tagAddButton} onClick={addTag}>
-                    태그 추가
-                  </button>
-                </div>
-                <div className={styles.tagList}>
-                  {(formData.tags || []).map((tag) => (
-                    <button key={tag} type="button" className={styles.tagChip} onClick={() => removeTag(tag)}>
-                      #{tag} ×
+                <section className={styles.subStepCard}>
+                  <div className={styles.subStepHeader}>
+                    <span className={styles.subStepNumber}>04</span>
+                    <h3 className={styles.subStepTitle}>명함에 표시될 태그를 생성해주세요 (최대 5개)</h3>
+                  </div>
+                  <div className={styles.tagEditor}>
+                    <input
+                      className={styles.tagInput}
+                      placeholder="예: 프론트엔드 · React · UX"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addTag();
+                        }
+                      }}
+                    />
+                    <button type="button" className={styles.tagAddButton} onClick={addTag}>
+                      + 태그 추가
                     </button>
-                  ))}
-                </div>
+                  </div>
+                  <div className={styles.tagList}>
+                    {(formData.tags || []).map((tag) => (
+                      <button key={tag} type="button" className={styles.tagChip} onClick={() => removeTag(tag)}>
+                        #{tag} ×
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={styles.subStepCard}>
+                  <div className={styles.subStepHeader}>
+                    <span className={styles.subStepNumber}>05</span>
+                    <h3 className={styles.subStepTitle}>당신의 페이지를 요약하는 소개글을 써주세요</h3>
+                  </div>
+                  <textarea
+                    name="summaryIntro"
+                    className={styles.bioInput}
+                    placeholder="당신의 명함에 대해 설명해주세요. (선택)"
+                    value={formData.summaryIntro}
+                    onChange={handleChange}
+                  />
+                </section>
               </div>
             )}
           </div>
         </section>
 
         <div className={styles.navControls}>
-          <button
-            className={`${styles.navButton} ${styles.navButtonGhost}`}
-            type="button"
-            onClick={() => setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev))}
-            disabled={!canGoPrev || isSaving}
-          >
-            ←
-          </button>
+          {!isEditMode ? (
+            <button
+              className={`${styles.navButton} ${styles.navButtonGhost}`}
+              type="button"
+              onClick={() => setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev))}
+              disabled={!canGoPrev || isSaving || isHydrating}
+            >
+              ←
+            </button>
+          ) : <span />}
           <button
             className={`${styles.navButton} ${styles.navButtonSolid} ${step === 4 ? styles.navButtonDone : ""}`}
             type="button"
             onClick={handleNext}
-            disabled={isSaving}
+            disabled={isSaving || isHydrating}
           >
-            {isSaving ? "저장 중..." : step === 4 ? "✓" : "→"}
+            {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 4 ? "✓" : "→"}
           </button>
         </div>
       </main>

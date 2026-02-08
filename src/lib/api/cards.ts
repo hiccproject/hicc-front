@@ -169,10 +169,38 @@ export type PortfolioData = {
   email: string;
   phone?: string;
   location?: string;
+<<<<<<< HEAD
   projects: { projectName: string; projectSummary: string; projectLink?: string; projectImg? : string}[];
+=======
+  projects: {
+    projectName: string;
+    projectSummary: string;
+    projectLink?: string;
+    projectImg?: string;
+  }[];
+>>>>>>> 8545fc58cbf593928a45e69ef670fe4fea5ad381
   summaryIntro: string;
   tags?: string[];
   layoutType: "CARD" | "LIST" | "GRID";
+};
+
+export type PortfolioDetailData = {
+  id: number;
+  category: PortfolioCategory;
+  subCategory: string;
+  profileImg?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  projects?: {
+    projectName?: string;
+    projectSummary?: string;
+    projectLink?: string;
+    projectImg?: string;
+  }[];
+  summaryIntro?: string | null;
+  tags?: string[];
+  layoutType?: "CARD" | "LIST" | "GRID";
 };
 
 /**
@@ -199,6 +227,31 @@ export async function savePortfolioStep(step: number, body: any, portfolioId?: n
 export async function getPortfolioShareLink(portfolioId: number) {
   return apiFetch<{ data: string }>(`/api/portfolios/${portfolioId}/share-link`, {
     method: "GET",
+    auth: true,
+  });
+}
+
+export async function getPortfolioDetail(slug: string) {
+  const normalizedSlug = slug
+    .trim()
+    .replace(/\/+$/, "")
+    .split("/")
+    .filter(Boolean)
+    .pop();
+
+  if (!normalizedSlug) {
+    throw new Error("유효한 포트폴리오 슬러그가 없습니다.");
+  }
+
+  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${encodeURIComponent(normalizedSlug)}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function deletePortfolio(portfolioId: number) {
+  return apiFetch(`/api/portfolios/${portfolioId}`, {
+    method: "DELETE",
     auth: true,
   });
 }
