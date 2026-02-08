@@ -85,7 +85,7 @@ export default function CreatePage() {
     email: "",
     phone: "",
     location: "",
-    projects: [{ projectName: "", projectSummary: "", projectLink: "" }],
+    projects: [{ projectName: "", projectSummary: "", projectLink: "", projectImg: "" }],
     summaryIntro: "",
     tags: [],
     layoutType: "CARD",
@@ -104,6 +104,13 @@ export default function CreatePage() {
       setFormData((prev) => ({ ...prev, profileImg: savedProfileImg }));
     }
   }, []);
+
+  useEffect(() => {
+    setProjectImagePreviews((prev) => {
+      const next = formData.projects.map((project, index) => project.projectImg || prev[index] || "");
+      return next.length > 0 ? next : [""];
+    });
+  }, [formData.projects]);
   // 입력 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -171,7 +178,7 @@ export default function CreatePage() {
   const addProject = () => {
     setFormData((prev) => ({
       ...prev,
-      projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "" }],
+      projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "", projectImg: "" }],
     }));
     setProjectImagePreviews((prev) => [...prev, ""]);
   };
@@ -188,17 +195,16 @@ export default function CreatePage() {
   };
 
   const getProjectLinks = (projectLink?: string) => {
-    const normalized = (projectLink || "")
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    if (projectLink === undefined || projectLink === null || projectLink === "") {
+      return [""];
+    }
 
-    return normalized.length > 0 ? normalized : [""];
+    const links = projectLink.split("\n").map((item) => item.trim());
+    return links.length > 0 ? links : [""];
   };
 
   const updateProjectLinks = (projectIndex: number, links: string[]) => {
-    const normalized = links.map((item) => item.trim()).filter(Boolean).join("\n");
-    handleProjectChange(projectIndex, "projectLink", normalized);
+    handleProjectChange(projectIndex, "projectLink", links.join("\n"));
   };
 
   const addProjectLink = (projectIndex: number) => {
@@ -222,7 +228,7 @@ export default function CreatePage() {
     updateProjectLinks(projectIndex, nextLinks);
   };
 
-  const handleProjectImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectImageChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -232,6 +238,24 @@ export default function CreatePage() {
       next[index] = localPreview;
       return next;
     });
+
+    try {
+      const uploaded = (await uploadImage(file)) as UploadImageResponse;
+      const uploadedUrl = extractImageUrl(uploaded);
+      if (!uploadedUrl) {
+        throw new Error("업로드된 이미지 URL이 비어있습니다.");
+      }
+      handleProjectChange(index, "projectImg", uploadedUrl);
+      setProjectImagePreviews((prev) => {
+        const next = [...prev];
+        next[index] = uploadedUrl;
+        return next;
+      });
+    } catch (error) {
+      console.error(error);
+      handleProjectChange(index, "projectImg", "");
+      alert("프로젝트 이미지 업로드에 실패했습니다.");
+    }
   };
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
@@ -252,13 +276,27 @@ export default function CreatePage() {
           profileImg: formData.profileImg || DEFAULT_PROFILE_IMG,
         };
       } else if (step === 2) {
+        const normalizedEmail = formData.email.trim();
+        if (!normalizedEmail) {
+          alert("이메일은 필수 입력 항목입니다.");
+          return;
+        }
+
         body = {
-          email: formData.email,
-          phone: formData.phone,
-          location: formData.location,
+          email: normalizedEmail,
+          phone: formData.phone?.trim() || null,
+          location: formData.location?.trim() || null,
         };
       } else if (step === 3) {
-        body = { projects: formData.projects };
+        body = {
+          projects: formData.projects.map((project) => ({
+            ...project,
+            projectLink: getProjectLinks(project.projectLink)
+              .map((link) => link.trim())
+              .filter(Boolean)
+              .join("\n"),
+          })),
+        };
       } else {
         body = {
           summaryIntro: formData.summaryIntro,
@@ -395,7 +433,7 @@ export default function CreatePage() {
                       </select>
                     </div>
                     <input name="email" className={styles.textInputWide} placeholder="이메일을 입력해주세요." value={formData.email} onChange={handleChange} />
-                    <input name="phone" className={styles.textInputWide} placeholder="전화번호를 입력해주세요. (선택)" value={formData.phone} onChange={handleChange} />
+                    <input name="phone" className={styles.textInputWide} placeholder="전화번호를 입력해주세요. (선택, 010-0000-0000 형식으로 작성해주세요.)" value={formData.phone} onChange={handleChange} />
                     <input name="location" className={styles.textInputWide} placeholder="위치를 입력해주세요. (선택)" value={formData.location} onChange={handleChange} />
                   </div>
                 </div>

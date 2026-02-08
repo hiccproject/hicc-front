@@ -132,7 +132,12 @@ export type PortfolioData = {
   email: string;
   phone?: string;
   location?: string;
-  projects: { projectName: string; projectSummary: string; projectLink?: string }[];
+  projects: {
+    projectName: string;
+    projectSummary: string;
+    projectLink?: string;
+    projectImg?: string;
+  }[];
   summaryIntro: string;
   tags?: string[];
   layoutType: "CARD" | "LIST" | "GRID";
