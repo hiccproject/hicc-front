@@ -510,10 +510,12 @@ export default function CreatePage() {
           </aside>}
 
           <div className={styles.content}>
-            <div className={styles.stepHeader}>
-              <span className={styles.stepNumber}>{stepNumber}</span>
-              <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
-            </div>
+            {(isEditMode || step !== 4) && (
+              <div className={styles.stepHeader}>
+                <span className={styles.stepNumber}>{stepNumber}</span>
+                <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
+              </div>
+            )}
             {/* Step 1: 직군 */}
             {(step === 1 && !isEditMode) && (
               <div className={styles.stepPanel}>
@@ -631,37 +633,50 @@ export default function CreatePage() {
             {/* Step 4: 소개 */}
             {(step === 4 || isEditMode) && (
               <div className={styles.bioPanel}>
-                <textarea
-                  name="summaryIntro"
-                  className={styles.bioInput}
-                  placeholder="당신의 명함에 대해 설명해주세요. (선택)"
-                  value={formData.summaryIntro}
-                  onChange={handleChange}
-                />
-              <div className={styles.tagEditor}>
-                  <input
-                    className={styles.tagInput}
-                    placeholder="태그를 입력하고 Enter를 눌러주세요. (최대 5개)"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                  />
-                  <button type="button" className={styles.tagAddButton} onClick={addTag}>
-                    태그 추가
-                  </button>
-                </div>
-                <div className={styles.tagList}>
-                  {(formData.tags || []).map((tag) => (
-                    <button key={tag} type="button" className={styles.tagChip} onClick={() => removeTag(tag)}>
-                      #{tag} ×
+                <section className={styles.subStepCard}>
+                  <div className={styles.subStepHeader}>
+                    <span className={styles.subStepNumber}>04</span>
+                    <h3 className={styles.subStepTitle}>명함에 표시될 태그를 생성해주세요 (최대 5개)</h3>
+                  </div>
+                  <div className={styles.tagEditor}>
+                    <input
+                      className={styles.tagInput}
+                      placeholder="예: 프론트엔드 · React · UX"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addTag();
+                        }
+                      }}
+                    />
+                    <button type="button" className={styles.tagAddButton} onClick={addTag}>
+                      + 태그 추가
                     </button>
-                  ))}
-                </div>
+                  </div>
+                  <div className={styles.tagList}>
+                    {(formData.tags || []).map((tag) => (
+                      <button key={tag} type="button" className={styles.tagChip} onClick={() => removeTag(tag)}>
+                        #{tag} ×
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={styles.subStepCard}>
+                  <div className={styles.subStepHeader}>
+                    <span className={styles.subStepNumber}>05</span>
+                    <h3 className={styles.subStepTitle}>당신의 페이지를 요약하는 소개글을 써주세요</h3>
+                  </div>
+                  <textarea
+                    name="summaryIntro"
+                    className={styles.bioInput}
+                    placeholder="당신의 명함에 대해 설명해주세요. (선택)"
+                    value={formData.summaryIntro}
+                    onChange={handleChange}
+                  />
+                </section>
               </div>
             )}
           </div>

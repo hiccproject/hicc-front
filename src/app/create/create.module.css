@@ -381,6 +381,36 @@
 
 .bioPanel {
   max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.subStepCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subStepHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subStepNumber {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6f80ff;
+}
+
+.subStepTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1f1f1f;
 }
 
 .bioInput {
@@ -465,7 +495,6 @@
 }
 
 .tagEditor {
-  margin-top: 16px;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -481,18 +510,18 @@
 }
 
 .tagAddButton {
-  border: 1px solid #d0d7ff;
+  border: 1px solid #d3d8df;
   border-radius: 999px;
   height: 38px;
   padding: 0 14px;
-  background: #edf2ff;
-  color: #3b5bdb;
+  background: #f3f4f6;
+  color: #6b7280;
   font-weight: 600;
+  font-size: 12px;
   cursor: pointer;
 }
 
 .tagList {
-  margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -501,10 +530,11 @@
 .tagChip {
   border: none;
   border-radius: 999px;
-  padding: 6px 12px;
-  background: #f1f3f5;
-  color: #495057;
-  font-size: 12px;
+  padding: 8px 13px;
+  background: #f1f4ff;
+  color: #3651c8;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
