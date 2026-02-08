@@ -12,11 +12,10 @@
   gap: 10px;
 }
 
-.box {
-  width: 16px;
-  height: 12px;
-  border: 1.5px solid #111;
-  display: inline-block;
+.logo {
+  width: 30px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .brand {

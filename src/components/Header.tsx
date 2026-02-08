@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import styles from "./Header.module.css";
 import { clearTokens, getAccessToken } from "@/lib/auth/tokens";
@@ -52,7 +53,14 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <Link href="/" className={styles.brandLink}>
-        <span className={styles.box} aria-hidden="true" />
+        <Image
+          src="/logo.png"
+          alt="OnePageMe 로고"
+          width={30}
+          height={22}
+          className={styles.logo}
+          priority
+        />
         <span className={styles.brand}>onepageme</span>
       </Link>
 

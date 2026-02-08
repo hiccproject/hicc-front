@@ -169,6 +169,7 @@ export type PortfolioData = {
   email: string;
   phone?: string;
   location?: string;
+
   projects: {
     projectName: string;
     projectSummary: string;

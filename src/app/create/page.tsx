@@ -492,8 +492,8 @@ export default function CreatePage() {
   );
 
   return (
-    <div className={styles.bg}>
-      <main className={styles.shell}>
+    <div className={`${styles.bg} ${isEditMode ? styles.bgEdit : ""}`}>
+      <main className={`${styles.shell} ${isEditMode ? styles.shellEdit : ""}`}>
         <Header />
 
         <section className={`${styles.body} ${isEditMode ? styles.bodySingle : ""}`}>
@@ -510,9 +510,9 @@ export default function CreatePage() {
             ))}
           </aside>}
 
-          <div className={styles.content}>
-            {(isEditMode || step !== 4) && (
-              <div className={styles.stepHeader}>
+           <div className={`${styles.content} ${isEditMode ? styles.contentEdit : ""}`}>
+            {(!isEditMode && step !== 4) && (
+              <div className={`${styles.stepHeader} ${isEditMode ? styles.stepHeaderEdit : ""}`}>
                 <span className={styles.stepNumber}>{stepNumber}</span>
                 <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
               </div>
@@ -542,6 +542,12 @@ export default function CreatePage() {
             {/* Step 2: 정보 */}
             {(step === 2 || isEditMode) && (
               <div className={styles.stepPanelColumn}>
+                {isEditMode && (
+                  <div className={`${styles.stepHeader} ${isEditMode ? styles.stepHeaderEdit : ""}`}>
+                    <span className={styles.stepNumber}>01</span>
+                    <h2 className={styles.stepHeadline}>추가 정보를 입력해주세요</h2>
+                  </div>
+                )}
                 <div className={`${styles.stepPanel} ${styles.step2Panel}`}>
                   {profileEditor}
                   <div className={`${styles.formStack} ${styles.step2FormStack}`}>
@@ -570,65 +576,73 @@ export default function CreatePage() {
             )}
             {/* Step 3: 프로젝트 */}
             {(step === 3 || isEditMode) && (
-              <div className={styles.projectPanel}>
-                {formData.projects.map((proj, idx) => (
-                  <div key={idx} className={styles.projectCard}>
-                    <button className={styles.deleteProjectButton} type="button" onClick={() => removeProject(idx)}>
-                      🗑️
-                    </button>
-                    <input
-                      className={styles.projectInput}
-                      placeholder="프로젝트 제목"
-                      value={proj.projectName}
-                      onChange={(e) => handleProjectChange(idx, "projectName", e.target.value)}
-                    />
-                    <textarea
-                      className={styles.projectText}
-                      placeholder="프로젝트 설명"
-                      value={proj.projectSummary}
-                      onChange={(e) => handleProjectChange(idx, "projectSummary", e.target.value)}
-                    />
-                    <label className={styles.photoDrop}>
-                      <input type="file" accept="image/*" className={styles.hiddenFileInput} onChange={(e) => handleProjectImageChange(idx, e)} />
-                      {projectImagePreviews[idx] ? (
-                        <img src={projectImagePreviews[idx]} alt="프로젝트 미리보기" className={styles.projectPreviewImage} />
-                      ) : (
-                        <>
-                          <span className={styles.photoIcon}>🖼️</span>
-                          <span>이미지를 첨부해 주세요. (선택)</span>
-                        </>
-                      )}
-                    </label>
-                    <div className={styles.projectLinksWrap}>
-                      {getProjectLinks(proj.projectLink).map((link, linkIdx) => (
-                        <div key={`${idx}-${linkIdx}`} className={styles.projectLinkRow}>
-                          <input
-                            className={styles.projectLinkInput}
-                            placeholder="링크를 붙여넣어 주세요."
-                            value={link}
-                            onChange={(e) => handleProjectLinkChange(idx, linkIdx, e.target.value)}
-                          />
-                          <button type="button" className={styles.projectLinkIconButton} onClick={() => addProjectLink(idx)} aria-label="링크 추가">
-                            ＋
-                          </button>
-                          {getProjectLinks(proj.projectLink).length > 1 && (
-                            <button
-                              type="button"
-                              className={styles.projectLinkIconButton}
-                              onClick={() => removeProjectLink(idx, linkIdx)}
-                              aria-label="링크 삭제"
-                            >
-                              －
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+              <div className={styles.stepPanelColumn}>
+                {isEditMode && (
+                  <div className={`${styles.stepHeader} ${isEditMode ? styles.stepHeaderEdit : ""}`}>
+                    <span className={styles.stepNumber}>02</span>
+                    <h2 className={styles.stepHeadline}>프로젝트를 첨부해주세요</h2>
                   </div>
-                ))}
-                <button className={styles.projectAdd} type="button" onClick={addProject}>
-                  <span className={styles.projectAddIcon}>＋</span>
-                </button>
+                )}
+                <div className={styles.projectPanel}>
+                  {formData.projects.map((proj, idx) => (
+                    <div key={idx} className={styles.projectCard}>
+                      <button className={styles.deleteProjectButton} type="button" onClick={() => removeProject(idx)}>
+                        🗑️
+                      </button>
+                      <input
+                        className={styles.projectInput}
+                        placeholder="프로젝트 제목"
+                        value={proj.projectName}
+                        onChange={(e) => handleProjectChange(idx, "projectName", e.target.value)}
+                      />
+                      <textarea
+                        className={styles.projectText}
+                        placeholder="프로젝트 설명"
+                        value={proj.projectSummary}
+                        onChange={(e) => handleProjectChange(idx, "projectSummary", e.target.value)}
+                      />
+                      <label className={styles.photoDrop}>
+                        <input type="file" accept="image/*" className={styles.hiddenFileInput} onChange={(e) => handleProjectImageChange(idx, e)} />
+                        {projectImagePreviews[idx] ? (
+                          <img src={projectImagePreviews[idx]} alt="프로젝트 미리보기" className={styles.projectPreviewImage} />
+                        ) : (
+                          <>
+                            <span className={styles.photoIcon}>🖼️</span>
+                            <span>이미지를 첨부해 주세요. (선택)</span>
+                          </>
+                        )}
+                      </label>
+                      <div className={styles.projectLinksWrap}>
+                        {getProjectLinks(proj.projectLink).map((link, linkIdx) => (
+                          <div key={`${idx}-${linkIdx}`} className={styles.projectLinkRow}>
+                            <input
+                              className={styles.projectLinkInput}
+                              placeholder="링크를 붙여넣어 주세요."
+                              value={link}
+                              onChange={(e) => handleProjectLinkChange(idx, linkIdx, e.target.value)}
+                            />
+                            <button type="button" className={styles.projectLinkIconButton} onClick={() => addProjectLink(idx)} aria-label="링크 추가">
+                              ＋
+                            </button>
+                            {getProjectLinks(proj.projectLink).length > 1 && (
+                              <button
+                                type="button"
+                                className={styles.projectLinkIconButton}
+                                onClick={() => removeProjectLink(idx, linkIdx)}
+                                aria-label="링크 삭제"
+                              >
+                                －
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <button className={styles.projectAdd} type="button" onClick={addProject}>
+                    <span className={styles.projectAddIcon}>＋</span>
+                  </button>
+                </div>
               </div>
             )}
             {/* Step 4: 소개 */}
@@ -636,7 +650,7 @@ export default function CreatePage() {
               <div className={styles.bioPanel}>
                 <section className={styles.subStepCard}>
                   <div className={styles.subStepHeader}>
-                    <span className={styles.subStepNumber}>04</span>
+                    <span className={styles.subStepNumber}>{isEditMode ? "03" : "04"}</span>
                     <h3 className={styles.subStepTitle}>명함에 표시될 태그를 생성해주세요 (최대 5개)</h3>
                   </div>
                   <div className={styles.tagEditor}>
@@ -667,7 +681,7 @@ export default function CreatePage() {
 
                 <section className={styles.subStepCard}>
                   <div className={styles.subStepHeader}>
-                    <span className={styles.subStepNumber}>05</span>
+                    <span className={styles.subStepNumber}>{isEditMode ? "04" : "05"}</span>
                     <h3 className={styles.subStepTitle}>당신의 페이지를 요약하는 소개글을 써주세요</h3>
                   </div>
                   <textarea
@@ -683,7 +697,7 @@ export default function CreatePage() {
           </div>
         </section>
 
-        <div className={styles.navControls}>
+        <div className={`${styles.navControls} ${isEditMode ? styles.navControlsFloating : ""}`}>
           {!isEditMode ? (
             <button
               className={`${styles.navButton} ${styles.navButtonGhost}`}
@@ -693,9 +707,9 @@ export default function CreatePage() {
             >
               ←
             </button>
-          ) : <span />}
+          ) : null}
           <button
-            className={`${styles.navButton} ${styles.navButtonSolid} ${step === 4 ? styles.navButtonDone : ""}`}
+            className={`${styles.navButton} ${styles.navButtonSolid} ${isEditMode ? styles.navButtonDone : ""}`}
             type="button"
             onClick={handleNext}
             disabled={isSaving || isHydrating}
