@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./create.module.css";
-import { getPortfolioDetail, savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
+import { getPortfolioDetail, getPortfolioShareLink, savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
 
@@ -138,7 +138,14 @@ export default function CreatePage() {
 
       try {
         setIsHydrating(true);
-        const response = await getPortfolioDetail(portfolioId);
+        const shareLinkResponse = await getPortfolioShareLink(portfolioId);
+        const slug = shareLinkResponse?.data?.trim();
+
+        if (!slug) {
+          throw new Error("슬러그를 가져오지 못했습니다.");
+        }
+
+        const response = await getPortfolioDetail(slug);
         const detail = response?.data;
         if (!detail) return;
 
@@ -508,7 +515,7 @@ export default function CreatePage() {
               <h2 className={styles.stepHeadline}>{stepHeadline}</h2>
             </div>
             {/* Step 1: 직군 */}
-            {(step === 1 || isEditMode) && (
+            {(step === 1 && !isEditMode) && (
               <div className={styles.stepPanel}>
                 {profileEditor}
                 <div className={styles.formRow}>

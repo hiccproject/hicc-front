@@ -193,8 +193,8 @@ export async function getPortfolioShareLink(portfolioId: number) {
   });
 }
 
-export async function getPortfolioDetail(portfolioId: number) {
-  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${portfolioId}`, {
+export async function getPortfolioDetail(slug: string) {
+  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${encodeURIComponent(slug)}`, {
     method: "GET",
     auth: true,
   });
