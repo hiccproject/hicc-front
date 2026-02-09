@@ -107,5 +107,11 @@ export async function apiFetch<T>(url: string, options: ApiFetchOptions = {}): P
     throw new Error(`API Error ${res.status}: ${text || res.statusText}`);
   }
 
-  return (await res.json()) as T;
+  const text = await res.text().catch(() => "");
+  if (!text) return {} as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }

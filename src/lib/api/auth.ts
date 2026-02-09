@@ -1,4 +1,5 @@
 ﻿import { buildApiUrl } from "@/lib/api/config";
+import { apiFetch } from "@/lib/api/client";
 
 import { extractTokens, getAccessToken, setTokens } from "@/lib/auth/tokens";
 
@@ -131,24 +132,10 @@ export async function changeMemberPassword(payload: {
 }
 
 export async function deleteMemberAccount() {
-  const accessToken = getAccessToken();
-  const res = await fetch(buildApiUrl("/api/mypage/delete"), {
+  return apiFetch("/api/mypage/delete", {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    credentials: "include",
-    cache: "no-store",
+    auth: true,
   });
-
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    const message = data?.message ?? "계정 삭제에 실패했습니다.";
-    throw new Error(message);
-  }
-
-  return data;
 }
 
 export async function requestGoogleLogin() {

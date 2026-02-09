@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
+import ConfirmModal from "@/components/ConfirmModal";
 import styles from "./mypage.module.css";
 import { clearTokens } from "@/lib/auth/tokens";
 import { changeMemberPassword, deleteMemberAccount } from "@/lib/api/auth";
@@ -67,6 +68,8 @@ export default function MyPage() {
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [passwordData, setPasswordData] = useState({
     current: "",
@@ -177,8 +180,8 @@ export default function MyPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("정말로 계정을 삭제하시겠습니까?")) return;
-
+    if (isDeleting) return;
+    setIsDeleting(true);
     try {
       const response = await deleteMemberAccount();
       const redirectUrl = response?.redirectUrl ?? "/";
@@ -192,6 +195,8 @@ export default function MyPage() {
       router.push(redirectUrl);
     } catch (error) {
       alert(error instanceof Error ? error.message : "계정 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -334,12 +339,34 @@ export default function MyPage() {
                   <span className={styles.labelName}>계정 삭제</span>
                   <span className={styles.labelValue}>영구적으로 계정을 삭제합니다.</span>
                 </div>
-                <button className={`${styles.editBtn} ${styles.deleteBtn}`} onClick={handleDeleteAccount}>삭제</button>
+                <button
+                  className={`${styles.editBtn} ${styles.deleteBtn}`}
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  disabled={isDeleting}
+                >
+                  삭제
+                </button>
               </div>
             </div>
           </section>
         </div>
       </main>
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        title="계정 삭제"
+        message="정말로 계정을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다."
+        confirmText={isDeleting ? "삭제 중..." : "삭제"}
+        cancelText="취소"
+        onCancel={() => {
+          if (isDeleting) return;
+          setDeleteConfirmOpen(false);
+        }}
+        onConfirm={async () => {
+          await handleDeleteAccount();
+          setDeleteConfirmOpen(false);
+        }}
+      />
     </div>
   );
 }
