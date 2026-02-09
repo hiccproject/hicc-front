@@ -9,6 +9,7 @@ import styles from "./create.module.css";
 import { getPortfolioDetail, getPortfolioShareLink, savePortfolioStep, PortfolioCategory, PortfolioData } from "@/lib/api/cards";
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
+import { getPortfolioProfileImage, setPortfolioProfileImage } from "@/lib/storage/portfolio-images";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -102,6 +103,7 @@ export default function CreatePage() {
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isHydrating, setIsHydrating] = useState(false);
+  const [isProfileUploading, setIsProfileUploading] = useState(false);
   const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
   const [profileName, setProfileName] = useState("회원");
   const [tagInput, setTagInput] = useState("");
@@ -172,8 +174,11 @@ export default function CreatePage() {
           layoutType: detail.layoutType || prev.layoutType,
         }));
 
-        if (detail.profileImg) {
-          setProfilePreview(detail.profileImg);
+        const fallbackProfileImg = portfolioId ? getPortfolioProfileImage(portfolioId) : "";
+        const resolvedProfileImg = detail.profileImg || fallbackProfileImg || "";
+        if (resolvedProfileImg) {
+          setProfilePreview(resolvedProfileImg);
+          setFormData((prev) => ({ ...prev, profileImg: resolvedProfileImg }));
         }
       } catch (error) {
         console.error(error);
@@ -188,15 +193,9 @@ export default function CreatePage() {
 
   useEffect(() => {
     const profile = getStoredProfile();
-    const savedProfileImg = localStorage.getItem("profileImg");
 
     if (profile?.name?.trim()) {
       setProfileName(profile.name.trim());
-    }
-
-    if (savedProfileImg?.trim()) {
-      setProfilePreview(savedProfileImg);
-      setFormData((prev) => ({ ...prev, profileImg: savedProfileImg }));
     }
   }, []);
 
@@ -234,6 +233,7 @@ export default function CreatePage() {
 
     const localPreview = URL.createObjectURL(file);
     setProfilePreview(localPreview);
+    setIsProfileUploading(true);
 
     try {
       const uploaded = (await uploadImage(file)) as UploadImageResponse;
@@ -241,12 +241,15 @@ export default function CreatePage() {
       const finalUrl = uploadedUrl || DEFAULT_PROFILE_IMG;
 
       setFormData((prev) => ({ ...prev, profileImg: finalUrl }));
-      localStorage.setItem("profileImg", finalUrl);
+      if (portfolioId) {
+        setPortfolioProfileImage(portfolioId, finalUrl);
+      }
     } catch (error) {
       console.error(error);
       setFormData((prev) => ({ ...prev, profileImg: DEFAULT_PROFILE_IMG }));
-      localStorage.setItem("profileImg", DEFAULT_PROFILE_IMG);
       alert("이미지 업로드에 실패하여 기본 이미지가 사용됩니다.");
+    } finally {
+      setIsProfileUploading(false);
     }
   };
 
@@ -355,6 +358,10 @@ export default function CreatePage() {
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
     if (isSaving) return;
+    if (isProfileUploading) {
+      alert("프로필 이미지 업로드 중입니다. 업로드 완료 후 다시 시도해주세요.");
+      return;
+    }
     setIsSaving(true);
 
     try {
@@ -410,6 +417,9 @@ export default function CreatePage() {
       if (step === 1 && res.data) {
         nextPortfolioId = res.data;
         setPortfolioId(res.data);
+        if (formData.profileImg) {
+          setPortfolioProfileImage(res.data, formData.profileImg);
+        }
       }
 
       if (isEditMode && nextPortfolioId) {
