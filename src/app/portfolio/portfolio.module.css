@@ -1,695 +1,1011 @@
 /* src/app/portfolio/portfolio.module.css */
 
-/* --- 전체 레이아웃 --- */
 .fullScreenContainer {
   min-height: 100vh;
-  background-color: white;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
+  color: #111111;
 }
 
-/* --- [수정] 헤더 레이아웃 (기존 shell 느낌 유지) --- */
 .headerContainer {
   width: 100%;
-  max-width: 1100px; /* 기존 shell 너비와 동일하게 제한 */
-  margin: 20px auto 0;   /* 중앙 정렬 */
+  max-width: 1160px;
+  margin: 20px auto 0;
+  padding: 0 8px;
 }
 
-/* --- [수정] 상단 툴바 영역 (고정 해제) --- */
 .toolbar {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 28px 8px 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  border-bottom: 1px solid #f0f0f0;
-  background: white;
-  /* position: sticky; 제거 -> 스크롤 시 위로 사라짐 */
+  position: relative;
 }
 
 .layoutSwitcher {
   display: flex;
-  background-color: #f3f4f6;
+  align-items: center;
+  gap: 6px;
   padding: 6px;
-  border-radius: 16px;
-  gap: 4px;
+  border: 1px solid #ececf0;
+  border-radius: 999px;
+  background: #fbfbfc;
 }
 
 .switchBtn {
-  border: none;
+  border: 0;
   background: transparent;
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #888;
-  border-radius: 12px;
+  color: #8a8f98;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 10px 18px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .switchBtnActive {
-  background-color: white;
-  color: #111;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  background: #f0f1f4;
+  color: #111111;
 }
 
 .actionGroup {
   position: absolute;
-  right: 20px;
+  right: 8px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 .actionBtn {
-  background: transparent;
-  border: none;
-  font-size: 14px;
-  color: #555;
+  border: 1px solid #eaebef;
+  background: #ffffff;
+  color: #343840;
+  font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  padding: 8px 12px;
+  height: 26px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: #f9fafb;
+  padding: 0 14px;
+  cursor: pointer;
 }
 
-/* --- 콘텐츠 영역 --- */
+.actionBtn:last-child {
+  border-color: #232428;
+  background: #232428;
+  color: #ffffff;
+}
+
 .content {
   flex: 1;
-  padding: 40px 20px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 30px 8px 40px;
 }
 
+.cardStage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+}
+
+.carouselArrow {
+  width: 38px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #ececf0;
+  background: #ffffff;
+  color: #b4b8bf;
+  font-size: 28px;
+  line-height: 1;
+}
 
 .homeCardStyle {
-  width: 100%;
-  max-width: 420px;
-  min-height: 600px;
+  width: min(100%, 420px);
+  min-height: 560px;
+  border: 1px solid #ececf0;
+  border-radius: 22px;
   background: #ffffff;
-  border-radius: 32px;
-  padding: 40px 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(21, 24, 32, 0.04);
+  padding: 24px 22px;
+}
+
+.cardTopRow {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  position: relative;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .cardAvatarCircle {
-  width: 130px;
-  height: 130px;
-  background: #f0f0f0;
-  border-radius: 50%;
-  margin-bottom: 32px;
+  width: 82px;
+  height: 82px;
+  border-radius: 999px;
   object-fit: cover;
-  border: 4px solid white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid #e9ebef;
+  background: #f4f6fa;
+}
+
+.cardIdentity {
+  min-width: 0;
 }
 
 .cardName {
-  font-size: 26px;
-  font-weight: 800;
   margin: 0;
-  color: #000;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
-.cardRole {
-  font-size: 16px;
-  color: #666;
-  font-weight: 600;
+.cardRolePill {
   margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #c9cbd1;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .cardIntro {
-  font-size: 16px;
-  color: #333;
-  margin: 24px 0 40px;
-  line-height: 1.6;
-}
-
-.cardTags {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.cardTagSpan {
+  margin: 0;
   font-size: 13px;
-  padding: 6px 14px;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  color: #555;
-  background: #fdfdfd;
+  color: #252a33;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
-.cardLinksArea {
-  width: 100%;
-  margin-top: 30px;
+.cardContactList {
+  margin-top: 26px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.cardContactItem {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #f3f4f7;
+  color: #2f3440;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardStatsBox {
+  margin-top: 26px;
+  border: 1px solid #eceef3;
+  border-radius: 14px;
+  background: #fbfcff;
+  padding: 14px 14px 12px;
+}
+
+.chartArea {
+  position: relative;
+  height: 120px;
+  border-bottom: 1px solid #edf0f5;
+  background-image: linear-gradient(to right, #eff2f8 1px, transparent 1px);
+  background-size: 5% 100%;
+}
+
+.chartLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  height: 2px;
+  background: linear-gradient(to right, #9ebbf8 0%, #87a8ef 100%);
+}
+
+.chartStats {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.chartLabel {
+  font-size: 11px;
+  color: #8e95a3;
+}
+
+.chartValue {
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.chartTotal {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.listLayout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 26px;
+  min-height: 560px;
+  border: 1px solid #eceef3;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.listAside {
+  padding: 18px;
+  border-right: 1px solid #eceef3;
+  background: #fafbfd;
+}
+
+.sideProfileCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.avatar {
+  width: 74px;
+  height: 74px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #e9ebef;
+  background: #f4f6fa;
+}
+
+.sideNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sideName {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.sideRole {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #c9cbd1;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sideIntro {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: #232a36;
+}
+
+.sideContactList {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sideContactItem {
+  height: 34px;
+  border-radius: 999px;
+  background: #f1f3f7;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0 14px;
+  font-size: 14px;
+  color: #2e3441;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sideStatsCard {
+  margin-top: 14px;
+  border: 1px solid #eceef3;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.statChart {
+  height: 92px;
+  border-bottom: 1px solid #edf0f5;
+  background-image: linear-gradient(to right, #eff2f8 1px, transparent 1px);
+  background-size: 5% 100%;
+}
+
+.statMetaRow {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  color: #8f96a4;
+  font-size: 11px;
+}
+
+.statNumRow {
+  margin-top: 2px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.statToday {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.statTotal {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.listMain {
+  padding: 14px 16px;
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.projectRow {
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f2f6;
+  display: grid;
+  grid-template-columns: 180px 1fr;
   gap: 12px;
 }
 
-.cardLinkButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 50px;
-  background: #f8f8f8;
-  border-radius: 12px;
-  text-decoration: none;
-  font-size: 15px;
-  color: #333;
-  font-weight: 700;
-  transition: background 0.2s;
-  border: none;
-}
-
-.cardLinkButton.clickable:hover {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-/* =============================== */
-/* --- [수정] LIST VIEW 스타일 --- */
-/* =============================== */
-.listGrid {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 40px;
+.projectThumbWrap {
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  align-items: start;
+  height: 136px;
+  border-radius: 14px;
+  border: 1px solid #eceef3;
+  overflow: hidden;
+  background: conic-gradient(from 45deg, #efefef 25%, #e7e7e7 0 50%, #efefef 0 75%, #e7e7e7 0);
+  background-size: 24px 24px;
 }
 
-/* --- 좌측: 프로필 & 소개 & 그래프 --- */
-.listSide {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: sticky;
-  top: 20px;
-}
-
-.sideProfileBox {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 30px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-}
-
-.avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; border: 1px solid #f0f0f0; }
-.sideName { font-size: 22px; font-weight: 800; color: #111; margin: 0 0 4px 0; }
-.sideRole { font-size: 14px; color: #666; font-weight: 600; margin-bottom: 12px; }
-
-.sideContact {
-  font-size: 13px;
-  color: #555;
-  background: #f9fafb;
-  padding: 12px;
-  border-radius: 12px;
-  width: 100%;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* [NEW] 좌측으로 이동한 소개글 박스 */
-.sideIntroBox {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 24px 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-}
-
-.sideIntroTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: #111;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sideIntroText {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #444;
-  white-space: pre-wrap; /* 줄바꿈 유지 */
-}
-
-/* 방문자 그래프 (기존 유지) */
-.visitorGraph {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 24px 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-}
-.graphTitle { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 16px; display: flex; justify-content: space-between; }
-.graphTitle span { color: #3b82f6; }
-.graphBars { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 8px; }
-.barCol { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
-.bar { width: 100%; background-color: #eff6ff; border-radius: 4px; position: relative; transition: height 0.5s; }
-.bar.active { background-color: #3b82f6; }
-.barLabel { font-size: 10px; color: #888; }
-
-
-/* --- 우측: 프로젝트 리스트 전용 --- */
-.listMain {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.listSectionTitle {
-  font-size: 18px;
-  font-weight: 800;
-  color: #111;
-  border-left: 4px solid #3b82f6;
-  padding-left: 12px;
-  margin-bottom: 8px;
-}
-
-/* [NEW] 프로젝트 아이템 (사진 + 내용) */
-.projectItem {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 24px;
-  transition: transform 0.2s, box-shadow 0.2s;
-  display: flex;
-  gap: 24px; /* 사진과 내용 사이 간격 */
-  align-items: flex-start;
-}
-
-.projectItem:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-}
-
-/* 프로젝트 썸네일 이미지 */
 .projectThumb {
-  width: 140px;
-  height: 140px;
-  border-radius: 12px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid #f0f0f0;
-  background-color: #f8f8f8;
+  display: block;
 }
 
-.projectContent {
-  flex: 1;
+.projectBody {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* flex 자식 overflow 방지 */
-}
-
-.projectHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  min-width: 0;
 }
 
 .projectTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111;
+  margin: 0;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 800;
 }
 
 .projectDesc {
-  font-size: 15px;
-  color: #555;
-  line-height: 1.6;
-  margin-bottom: 16px;
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #4d5360;
+  line-height: 1.5;
 }
 
-/* --- 링크 드롭다운 스타일 --- */
 .linkWrapper {
   margin-top: auto;
-  width: 100%;
-  position: relative;
 }
 
-/* 대표 링크 버튼 (메인) */
 .mainLinkBlock {
+  margin-top: 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
   border-radius: 10px;
-  padding: 0;
-  transition: all 0.2s;
-}
-
-.mainLinkBlock:hover {
-  background: #f1f3f5;
-  border-color: #dee2e6;
+  border: 1px solid #eceff3;
+  background: #f4f6fa;
+  overflow: hidden;
 }
 
 .mainLinkAnchor {
   flex: 1;
   text-decoration: none;
-  color: #333;
-  font-weight: 600;
+  color: #2f3440;
   font-size: 14px;
-  padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 0 14px;
+  height: 32px;
+  min-width: 0;
 }
 
-.linkIcon { font-size: 14px; }
+.mainLinkAnchor span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-/* 펼치기 토글 버튼 */
+.linkIcon {
+  color: #8aa8ef;
+  font-weight: 700;
+}
+
 .expandBtn {
-  background: transparent;
-  border: none;
-  border-left: 1px solid #e9ecef;
-  width: 44px;
-  height: 44px; /* 높이 매칭 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px;
+  height: 32px;
+  border: 0;
+  border-left: 1px solid #e7ebf3;
+  background: #f4f6fa;
+  color: #808796;
+  font-size: 13px;
   cursor: pointer;
-  color: #666;
-  transition: background 0.2s;
-  font-size: 12px;
 }
 
-.expandBtn:hover {
-  background: #e9ecef;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
-}
-
-/* 펼쳐진 링크 리스트 */
 .subLinksList {
   margin-top: 8px;
-  background: white;
-  border: 1px solid #e9ecef;
+  border: 1px solid #eceff3;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  animation: slideDown 0.2s ease-out;
 }
 
 .subLinkItem {
-  display: block;
-  padding: 12px 16px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #394050;
   text-decoration: none;
-  font-size: 13px;
-  color: #555;
-  border-bottom: 1px solid #f1f3f5;
-  transition: background 0.1s;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f2f6;
 }
 
 .subLinkItem:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
-.subLinkItem:hover {
-  background: #f8f9fa;
-  color: #3b82f6;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* 모바일 대응 */
-@media (max-width: 768px) {
-  .projectItem {
-    flex-direction: column;
-  }
-  .projectThumb {
-    width: 100%;
-    height: 180px;
-  }
-}
-
-/* =============================== */
-/* --- [NEW] GRID VIEW 스타일 --- */
-/* =============================== */
 .gridContainer {
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 40px; /* 간격 조절 */
-  padding-bottom: 60px;
+  gap: 24px;
 }
 
-/* --- [NEW] 상단 헤더 영역 (좌측 프로필 / 우측 그래프) --- */
-.gridHeaderRow {
+.gridTop {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* 1:1 비율 분할 */
-  gap: 40px;
-  padding: 0 10px;
-  align-items: center; /* 수직 중앙 정렬 */
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
 }
 
-/* 좌측: 프로필 (크기 축소 및 왼쪽 정렬) */
-.gridProfileCompact {
+.gridProfileArea {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* 왼쪽 정렬 */
-  text-align: left;
+  gap: 12px;
+}
+
+.gridIdentityRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .gridAvatarSmall {
-  width: 80px; /* 120px -> 80px 축소 */
-  height: 80px;
-  border-radius: 50%;
+  width: 74px;
+  height: 74px;
+  border-radius: 999px;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border: 2px solid white;
-  margin-bottom: 16px;
+  border: 1px solid #e9ebef;
+  background: #f4f6fa;
 }
 
-.gridProfileContent h1 {
-  font-size: 26px; /* 36px -> 26px 축소 */
+.gridName {
+  margin: 0;
+  font-size: 30px;
   font-weight: 800;
-  color: #111;
-  margin: 0 0 6px;
+  line-height: 1;
 }
 
 .gridRoleBadge {
-  font-size: 13px;
-  color: #555;
+  margin-top: 8px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #c9cbd1;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
   font-weight: 600;
-  background: #f3f4f6;
-  padding: 4px 10px;
-  border-radius: 6px;
-  margin-bottom: 12px;
-  display: inline-block;
 }
 
-.gridIntroSmall {
-  font-size: 15px; /* 17px -> 15px 축소 */
+.gridIntro {
+  margin: 0;
+  font-size: 14px;
   line-height: 1.5;
-  color: #444;
-  margin-bottom: 16px;
-  max-width: 90%; /* 너무 길어지지 않게 */
+  color: #232a36;
+  white-space: pre-wrap;
 }
 
 .gridContactRow {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .gridContactPill {
-  font-size: 12px;
-  color: #666;
-  background: white;
-  border: 1px solid #e5e7eb;
-  padding: 6px 12px;
-  border-radius: 20px;
-}
-
-/* 우측: 방문자 그래프 (리스트형과 스타일 공유 또는 별도 정의) */
-.gridGraphBox {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* 그래프 내부 스타일 (ListView와 동일) */
-.graphHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  height: 34px;
+  border-radius: 999px;
+  background: #f1f3f7;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  color: #2e3441;
   font-size: 14px;
-  font-weight: 700;
-  color: #333;
 }
-.highlight { color: #3b82f6; }
 
-.graphBarsRow {
+.gridStatsCard {
+  border: 1px solid #eceef3;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.gridProjectsTitle {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 100px; /* 높이 고정 */
-  gap: 12px;
+  align-items: baseline;
+  gap: 10px;
 }
-/* .bar, .barCol 등은 ListView 스타일 재사용 가능하지만 명시적으로 적어둠 */
-.gBarCol { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
-.gBar { width: 100%; background: #eff6ff; border-radius: 4px; transition: height 0.5s; }
-.gBar.active { background: #3b82f6; }
-.gLabel { font-size: 11px; color: #999; }
 
+.gridProjectsCount {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
 
-/* --- 하단 포트폴리오 그리드 (기존 유지) --- */
+.gridProjectsLabel {
+  font-size: 13px;
+  color: #3d4250;
+}
+
 .gridProjects {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  padding: 0 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .gridProjectCard {
-  background: white;
-  border-radius: 20px; /* 라운드 약간 축소 */
+  border: 1px solid #eceef3;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #f0f0f0;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  background: #ffffff;
 }
 
-.gridProjectCard:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+.gridProjectImageWrap {
+  height: 170px;
+  border-bottom: 1px solid #eceef3;
+  background: conic-gradient(from 45deg, #efefef 25%, #e7e7e7 0 50%, #efefef 0 75%, #e7e7e7 0);
+  background-size: 24px 24px;
+  position: relative;
 }
 
-.projectThumbnail {
-  height: 160px; /* 썸네일 높이 축소 */
-  background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
-  display: flex;
+.gridProjectImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.projectTagChip {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(52, 55, 62, 0.85);
+  color: #ffffff;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  border-bottom: 1px solid #f9fafb;
+  font-size: 14px;
 }
 
-.gridProjectContent { padding: 20px; flex: 1; display: flex; flex-direction: column; }
-.gridProjectTitle { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 8px; }
-.gridProjectDesc { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 16px; flex: 1; display: -webkit-box; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.gridProjectFooter { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
-.gridLinkBtn { font-size: 13px; font-weight: 600; color: #3b82f6; text-decoration: none; background: #eff6ff; padding: 6px 12px; border-radius: 8px; }
-.gridLinkBtn:hover { background: #dbeafe; }
-
-/* 모바일 대응 */
-@media (max-width: 768px) {
-  .gridHeaderRow {
-    grid-template-columns: 1fr; /* 모바일은 세로 배치 */
-    gap: 24px;
-  }
-  .gridProfileCompact { align-items: center; text-align: center; }
-  .gridIntroSmall { max-width: 100%; }
+.gridProjectBody {
+  padding: 12px;
 }
 
-.tags { display: flex; gap: 8px; flex-wrap: wrap; }
-.tag { font-size: 13px; background-color: #f1f5f9; color: #334155; padding: 6px 12px; border-radius: 8px; }
-.section { display: flex; flex-direction: column; gap: 16px; }
-.sectionTitle { font-size: 20px; font-weight: 800; color: #111; border-left: 5px solid #3b82f6; padding-left: 14px; margin-bottom: 4px; }
-.aboutText { font-size: 16px; line-height: 1.7; color: #333; }
-.contactInfo { font-size: 14px; color: #444; background: #f8fafc; padding: 16px; border-radius: 12px; }
-.timeline { gap: 30px; margin-top: 10px; }
-.timelineItem { padding-left: 20px; border-left: 3px solid #e2e8f0; }
-.projectTitle { font-size: 18px; font-weight: 700; color: #000; gap: 8px; margin-bottom: 6px; }
-.linkIcon { font-size: 12px; padding: 4px 8px; }
-.projectDesc { font-size: 15px; color: #555; line-height: 1.6; }
+.gridProjectTitle {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.gridProjectDesc {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #4d5360;
+  line-height: 1.45;
+}
 
 .stateBox {
   width: 100%;
-  max-width: 520px;
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  max-width: 540px;
+  border: 1px solid #eceef3;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 26px;
 }
 
 .stateTitle {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 800;
-  color: #111;
   margin-bottom: 10px;
 }
 
 .stateDesc {
   font-size: 14px;
-  color: #555;
+  color: #4f5563;
   line-height: 1.6;
 }
 
 .inlineCode {
-  background: #f3f4f6;
-  padding: 2px 8px;
+  display: inline-block;
   border-radius: 8px;
-  font-size: 13px;
+  background: #f3f4f7;
+  padding: 1px 8px;
 }
 
 .emptyBox {
   width: 100%;
-  background: #f9fafb;
-  border: 1px dashed #e5e7eb;
-  border-radius: 14px;
-  padding: 16px;
-  color: #666;
+  border: 1px dashed #d6dbe5;
+  border-radius: 12px;
+  background: #f8f9fc;
+  color: #586071;
   font-size: 14px;
+  line-height: 1.5;
+  padding: 14px;
   text-align: center;
 }
-.createBtn {
-  margin-top: 24px;
-  background-color: #3b82f6;
-  color: white;
-  font-size: 16px;
-  font-weight: 700;
-  padding: 14px 32px;
-  border-radius: 12px;
-  border: none;
+
+@media (max-width: 980px) {
+  .toolbar {
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .actionGroup {
+    position: static;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .cardStage {
+    gap: 8px;
+  }
+
+  .carouselArrow {
+    display: none;
+  }
+
+  .listLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .listAside {
+    border-right: 0;
+    border-bottom: 1px solid #eceef3;
+  }
+
+  .projectRow {
+    grid-template-columns: 1fr;
+  }
+
+  .gridTop {
+    grid-template-columns: 1fr;
+  }
+
+  .gridProjects {
+    grid-template-columns: 1fr;
+  }
+
+  .switchBtn {
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+
+  .cardName,
+  .sideName,
+  .gridName,
+  .projectTitle,
+  .gridProjectTitle,
+  .chartValue,
+  .statToday {
+    font-size: 30px;
+  }
+
+  .chartTotal,
+  .statTotal {
+    font-size: 13px;
+  }
+}
+/* --- Card Carousel Precision Overrides --- */
+.cardStage {
+  gap: 14px;
+  align-items: center;
+}
+
+.carouselArrow {
+  width: 42px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #e5e8ef;
+  background: #ffffff;
+  color: #bec3cc;
+  font-size: 13px;
+  line-height: 1;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.createBtn:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
+.carouselArrow:hover {
+  border-color: #d8dde7;
+  color: #9aa1ae;
 }
 
-.createBtn:active {
-  transform: translateY(0);
+.cardArrowHidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.homeCardStyle {
+  width: min(100%, 400px);
+  min-height: 520px;
+  border: 1px solid #ebedf2;
+  border-radius: 22px;
+  box-shadow: 0 2px 10px rgba(33, 40, 52, 0.05);
+  padding: 18px 16px;
+  position: relative;
+}
+
+.cardSlideMeta {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  color: #a1a6b2;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cardTopRow {
+  margin-top: 18px;
+  align-items: center;
+}
+
+.cardAvatarCircle {
+  width: 80px;
+  height: 80px;
+  border: 1px solid #e6eaf1;
+}
+
+.cardName {
+  font-size: 30px;
+  letter-spacing: -0.03em;
+}
+
+.cardRolePill {
+  height: 26px;
+  padding: 0 14px;
+  background: #c6c8ce;
+  font-size: 13px;
+}
+
+.cardIntro {
+  margin-top: 14px;
+  font-size: 14px;
+  color: #1f2633;
+  line-height: 1.45;
+}
+
+.cardContactList {
+  margin-top: 14px;
+  gap: 10px;
+}
+
+.cardContactItem {
+  height: 32px;
+  background: #f3f5f9;
+  font-size: 13px;
+  color: #2d3442;
+}
+
+.cardChartPanel {
+  margin-top: 14px;
+  border: 1px solid #eceff5;
+  border-radius: 12px;
+  padding: 10px 12px 12px;
+}
+
+.cardChartSvg {
+  width: 100%;
+  height: 110px;
+  display: block;
+}
+
+.cardChartAxis {
+  stroke: #e9edf4;
+  stroke-width: 0.6;
+}
+
+.cardChartPath {
+  fill: none;
+  stroke: #8aa9ec;
+  stroke-width: 1.8;
+}
+
+.cardChartPoint {
+  fill: #ffffff;
+  stroke: #8aa9ec;
+  stroke-width: 1.6;
+}
+
+.cardStatsRow {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.cardStatsItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cardStatsLabel {
+  color: #979fad;
+  font-size: 11px;
+}
+
+.cardStatsValue {
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.cardStatsUnit {
+  margin-left: 2px;
+  font-size: 16px;
+}
+
+.cardProjectSlide {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cardProjectImageWrap {
+  width: 100%;
+  height: 240px;
+  border-radius: 14px;
+  border: 1px solid #e9ecf3;
+  overflow: hidden;
+  background: conic-gradient(from 45deg, #eeeeee 25%, #e4e4e4 0 50%, #eeeeee 0 75%, #e4e4e4 0);
+  background-size: 22px 22px;
+  position: relative;
+}
+
+.cardProjectImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardProjectBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(69, 72, 79, 0.9);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.cardProjectLinkBar {
+  margin-top: 14px;
+  border: 1px solid #e9edf4;
+  border-radius: 10px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #f3f5f9;
+}
+
+.cardProjectLink {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #2f3644;
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardProjectLinkTail {
+  width: 36px;
+  height: 100%;
+  border-left: 1px solid #e4e9f1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b92a1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cardProjectTitle {
+  margin: 18px 0 0;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.cardProjectDesc {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #505868;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 980px) {
+  .homeCardStyle {
+    min-height: 560px;
+    padding: 22px 18px;
+  }
+
+  .cardName,
+  .cardProjectTitle,
+  .cardStatsValue {
+    font-size: 30px;
+  }
+
+  .cardStatsUnit {
+    font-size: 13px;
+  }
 }
