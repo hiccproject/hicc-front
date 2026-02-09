@@ -35,9 +35,63 @@
 .profileCircle {
   width: 160px;
   height: 160px;
-  background-color: #737373;
+  background-color: #eceff3;
   border-radius: 50%;
   margin-bottom: 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  position: relative;
+  overflow: visible;
+}
+
+.profileImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+}
+
+.profileEdit {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #4a4f58;
+  color: #ffffff;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 2;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  border: none;
+  cursor: pointer;
+}
+
+.profileEdit:hover {
+  background: #3b3f47;
+}
+
+.profileEdit:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.hiddenFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .userName {
