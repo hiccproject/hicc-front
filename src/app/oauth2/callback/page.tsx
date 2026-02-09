@@ -1,3 +1,4 @@
+// src/app/oauth2/callback/page.tsx
 "use client";
 
 import { useEffect } from "react";

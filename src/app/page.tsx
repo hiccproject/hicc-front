@@ -15,66 +15,70 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // ✅ 구글 로그인 리다이렉트: 토큰 저장 → signup/info → login(0) 체크 → 분기
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // ✅ 구글 로그인 리다이렉트: 토큰 저장 → (옵션) signup/info → (옵션) 기존회원 체크 → 분기
+useEffect(() => {
+  if (typeof window === "undefined") return;
 
-    const run = async () => {
-      const url = new URL(window.location.href);
-      const accessToken = url.searchParams.get("accessToken");
-      const refreshToken = url.searchParams.get("refreshToken");
+  const run = async () => {
+    const url = new URL(window.location.href);
+    const accessToken = url.searchParams.get("accessToken");
+    const refreshToken = url.searchParams.get("refreshToken");
 
-      if (!accessToken && !refreshToken) return;
+    // 홈에 토큰 없이 들어온 경우엔 아무것도 안 함
+    if (!accessToken && !refreshToken) return;
 
-      // 1) 토큰 저장
-      setTokens({
-        accessToken: accessToken ?? undefined,
-        refreshToken: refreshToken ?? undefined,
-      });
+    // 1) 토큰 저장
+    setTokens({
+      accessToken: accessToken ?? undefined,
+      refreshToken: refreshToken ?? undefined,
+    });
 
-      // 2) 주소창 토큰 제거
-      url.searchParams.delete("accessToken");
-      url.searchParams.delete("refreshToken");
-      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    // ✅ 토큰이 내려온 순간 "일단 로그인 상태"로 처리 (이게 핵심)
+    setIsLoggedIn(true);
 
-      try {
-        // 3) signup/info로 email/name 받기
-        const info = await fetchSignupInfo(); // { email, name? } 형태로 구현할 예정
-        const email = info.email?.trim() ?? "";
-        const name = info.name?.trim() ?? "";
+    // 2) 주소창 토큰 제거
+    url.searchParams.delete("accessToken");
+    url.searchParams.delete("refreshToken");
+    window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
 
-        if (!email) {
-          // email이 없으면 플로우가 깨진 거라 일단 홈 유지(또는 로그인 페이지로)
-          return;
-        }
+    // 3) 아래 흐름은 "부가 확인"이므로 실패해도 홈을 유지해야 함
+    try {
+      const info = await fetchSignupInfo(); // { email, name? }
+      const email = info.email?.trim() ?? "";
+      const name = info.name?.trim() ?? "";
 
-        // 4) /api/members/login 에 password:"0"로 기존회원 체크
-        try {
-          await loginMemberZeroPassword(email);
-          // ✅ 기존 회원이면 로그인 성공으로 간주 (토큰은 이미 저장되어 있음)
-          setIsLoggedIn(true);
-          router.replace("/"); // 그대로 홈 유지 or /login-success
-          return;
-        } catch (e) {
-          // ✅ 가입되지 않은 이메일(C002)이면 구글 회원가입 페이지로
-          if (e instanceof Error && e.message.includes("C002")) {
-            // google-signup 페이지에서 쓸 값 저장
-            localStorage.setItem("google_signup_email", email);
-            if (name) localStorage.setItem("google_signup_name", name);
-
-            router.replace("/google-signup");
-            return;
-          }
-          // 그 외 에러는 그냥 멈추거나, 로그인 페이지로 보내도 됨
-          // router.replace("/login");
-        }
-      } catch {
-        // signup/info 실패 시 처리
-        // router.replace("/login");
+      if (!email) {
+        // info가 이상해도 홈 유지
+        return;
       }
-    };
 
-    run();
-  }, [router]);
+      // 4) 기존회원 체크 (실패 시에만 google-signup으로 보내고, 그 외엔 홈 유지)
+      try {
+        await loginMemberZeroPassword(email);
+        // 기존 회원이면 홈 유지 (이미 setIsLoggedIn(true))
+        return;
+      } catch (e) {
+        if (e instanceof Error && e.message.includes("C002")) {
+          localStorage.setItem("google_signup_email", email);
+          if (name) localStorage.setItem("google_signup_name", name);
+          router.replace("/google-signup");
+          return;
+        }
+
+        // ✅ 여기서 절대 /login으로 보내지 말고 홈 유지
+        console.warn("기존회원 체크 실패(홈 유지):", e);
+        return;
+      }
+    } catch (e) {
+      // ✅ signup/info 실패도 홈 유지 (토큰이 있으니)
+      console.warn("signup/info 실패(홈 유지):", e);
+      return;
+    }
+  };
+
+  run();
+}, [router]);
+
 
   // 로그인 상태 확인(기존 로직)
   useEffect(() => {
