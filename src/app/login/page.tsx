@@ -81,7 +81,7 @@ export default function LoginPage() {
             </button>
 
             <div className={styles.findLinks}>
-              <Link href="/find-pw">비밀번호 찾기</Link>
+              <Link href="/find-pw">비밀번호 재설정</Link>
             </div>
 
             {/* 이미지의 소셜 로그인 구분선 구조 추가 */}

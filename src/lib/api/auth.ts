@@ -109,10 +109,12 @@ export async function changeMemberPassword(payload: {
   currentPassword: string;
   newPassword: string;
 }) {
+  const accessToken = getAccessToken();
   const res = await fetch(buildApiUrl("/api/members/password"), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify(payload),
@@ -129,10 +131,12 @@ export async function changeMemberPassword(payload: {
 }
 
 export async function deleteMemberAccount() {
-  const res = await fetch(buildApiUrl("/api/members"), {
+  const accessToken = getAccessToken();
+  const res = await fetch(buildApiUrl("/api/mypage/delete"), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     credentials: "include",
     cache: "no-store",

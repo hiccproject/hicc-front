@@ -22,6 +22,7 @@
   grid-template-columns: 200px 1fr;
   gap: 56px;
   align-items: flex-start;
+  margin-top: 34px;
 }
 
 .stepper {
@@ -458,6 +459,15 @@
   align-items: center;
 }
 
+.navControlsFloating {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  left: auto;
+  width: auto;
+  z-index: 50;
+}
+
 .navButton {
   width: 44px;
   height: 44px;
@@ -479,6 +489,16 @@
 .navButtonSolid {
   background: #2f2f2f;
   color: #ffffff;
+}
+
+.navButtonDone {
+  width: auto;
+  height: 48px;
+  border-radius: 999px;
+  padding: 0 22px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.18);
 }
 
 .navButton:disabled {
@@ -511,6 +531,12 @@
   .navControls {
     position: static;
     margin-top: 24px;
+  }
+
+  .navControlsFloating {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
   }
 }
 
@@ -570,4 +596,27 @@
 
 .bodySingle {
   grid-template-columns: 1fr;
+  justify-items: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.contentEdit {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  transform: translateX(70px);
+}
+
+@media (max-width: 960px) {
+  .bodySingle {
+    display: grid;
+    justify-items: stretch;
+  }
+
+  .contentEdit {
+    width: 100%;
+    margin: 0;
+    transform: none;
+  }
 }

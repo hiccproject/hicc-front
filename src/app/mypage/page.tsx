@@ -180,15 +180,17 @@ export default function MyPage() {
     if (!confirm("정말로 계정을 삭제하시겠습니까?")) return;
 
     try {
-      await deleteMemberAccount();
+      const response = await deleteMemberAccount();
+      const redirectUrl = response?.redirectUrl ?? "/";
+      const message = response?.message ?? "계정이 삭제되었습니다.";
       if (emailId) {
         removeStoredNameForEmail(emailId);
       }
       clearTokens();
       clearStoredProfile();
-      alert("계정이 삭제되었습니다.");
-      router.push("/");
-       } catch (error) {
+      alert(message);
+      router.push(redirectUrl);
+    } catch (error) {
       alert(error instanceof Error ? error.message : "계정 삭제에 실패했습니다.");
     }
   };
