@@ -22,6 +22,7 @@
   grid-template-columns: 200px 1fr;
   gap: 56px;
   align-items: flex-start;
+  margin-top: 34px;
 }
 
 .stepper {
@@ -595,4 +596,27 @@
 
 .bodySingle {
   grid-template-columns: 1fr;
+  justify-items: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.contentEdit {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  transform: translateX(70px);
+}
+
+@media (max-width: 960px) {
+  .bodySingle {
+    display: grid;
+    justify-items: stretch;
+  }
+
+  .contentEdit {
+    width: 100%;
+    margin: 0;
+    transform: none;
+  }
 }
