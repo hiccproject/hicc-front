@@ -14,7 +14,7 @@ export default function OAuthCallbackPage() {
     const refreshToken = params.get("refreshToken");
 
     if (!accessToken || !refreshToken) {
-      router.replace("/login");
+      router.replace("/");
       return;
     }
 
