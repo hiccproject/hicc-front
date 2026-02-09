@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import styles from "./mypage.module.css";
 import { clearTokens } from "@/lib/auth/tokens";
 import { changeMemberPassword, deleteMemberAccount } from "@/lib/api/auth";
+import { uploadImage } from "@/lib/api/uploads";
 import {
   clearStoredProfile,
   getStoredNameForLogin,
@@ -15,12 +16,54 @@ import {
   setStoredProfile,
 } from "../../lib/auth/profile";
 
+type UploadImageResponse =
+  | string
+  | {
+      data?: string;
+      url?: string;
+      imageUrl?: string;
+    };
+
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
+const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_BASE_URL ?? "";
+
+function normalizeImageSrc(payload: UploadImageResponse): string {
+  if (!payload) return "";
+
+  const raw = typeof payload === "string" ? payload : payload?.imageUrl ?? payload?.url ?? payload?.data ?? "";
+  const normalized = raw.trim();
+
+  if (!normalized) return "";
+
+  if (
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("blob:") ||
+    normalized.startsWith("data:")
+  ) {
+    return normalized;
+  }
+
+  const matchedUrl = normalized.match(/https?:\/\/\S+/)?.[0];
+  if (matchedUrl) {
+    return matchedUrl;
+  }
+
+  if (S3_BASE_URL) {
+    return `${S3_BASE_URL.replace(/\/$/, "")}/${normalized.replace(/^\//, "")}`;
+  }
+
+  return "";
+}
+
 export default function MyPage() {
   const router = useRouter();
   
   const [name, setName] = useState("");
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
+  const [profilePreview, setProfilePreview] = useState(DEFAULT_PROFILE_IMG);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState("");
@@ -31,16 +74,21 @@ export default function MyPage() {
   });
 
   useEffect(() => {
-  const profile = getStoredProfile();
-  if (profile) {
-    if (profile.email && profile.name?.trim()) {
-      setStoredNameForEmail(profile.email, profile.name);
+    const profile = getStoredProfile();
+    if (profile) {
+      if (profile.email && profile.name?.trim()) {
+        setStoredNameForEmail(profile.email, profile.name);
+      }
+      const storedName = getStoredNameForLogin(profile.email ?? "");
+      setName(storedName || profile.name || "");
+      setEmailId(profile.email ?? "");
+      setPassword(profile.password ?? "");
     }
-    const storedName = getStoredNameForLogin(profile.email ?? "");
-    setName(storedName || profile.name || "");
-    setEmailId(profile.email ?? "");
-    setPassword(profile.password ?? "");
-  }
+
+    const savedProfileImg = localStorage.getItem("profileImg");
+    if (savedProfileImg?.trim()) {
+      setProfilePreview(savedProfileImg);
+    }
   }, []);
 
   const startEdit = (field: string, value: string) => {
@@ -49,6 +97,29 @@ export default function MyPage() {
       setPasswordData({ current: "", new: "" });
     } else {
       setTempValue(value);
+    }
+  };
+
+  const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const localPreview = URL.createObjectURL(file);
+    setProfilePreview(localPreview);
+
+    try {
+      const uploaded = (await uploadImage(file)) as UploadImageResponse;
+      const uploadedUrl = normalizeImageSrc(uploaded);
+      const finalUrl = uploadedUrl || DEFAULT_PROFILE_IMG;
+
+      setProfilePreview(finalUrl);
+      localStorage.setItem("profileImg", finalUrl);
+      alert("사진이 변경되었습니다.");
+    } catch (error) {
+      console.error(error);
+      setProfilePreview(DEFAULT_PROFILE_IMG);
+      localStorage.setItem("profileImg", DEFAULT_PROFILE_IMG);
+      alert("이미지 업로드에 실패하여 기본 이미지가 사용됩니다.");
     }
   };
 
@@ -129,7 +200,31 @@ export default function MyPage() {
 
         <div className={styles.body}>
           <aside className={styles.sidebar}>
-            <div className={styles.profileCircle} />
+            <div className={styles.profileCircle}>
+              <img
+                src={profilePreview || DEFAULT_PROFILE_IMG}
+                alt="프로필 이미지"
+                className={styles.profileImage}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+                }}
+              />
+              <input
+                type="file"
+                accept="image/*"
+                className={styles.hiddenFileInput}
+                onChange={handleProfileUpload}
+                ref={fileInputRef}
+              />
+              <button
+                type="button"
+                className={styles.profileEdit}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="프로필 사진 변경"
+              >
+                ✎
+              </button>
+            </div>
             <h2 className={styles.userName}>{name}</h2>
             <p className={styles.userEmail}>{emailId}</p>
           </aside>
