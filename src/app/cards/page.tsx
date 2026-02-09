@@ -8,6 +8,7 @@ import styles from "./cards.module.css";
 import Header from "@/components/Header";
 import { getAccessToken } from "@/lib/auth/tokens";
 import { deletePortfolio } from "@/lib/api/cards";
+import { getPortfolioProfileImage, removePortfolioProfileImage } from "@/lib/storage/portfolio-images";
 
 // API 응답 데이터 타입 정의
 type PortfolioItem = {
@@ -96,6 +97,7 @@ export default function CardsPage() {
     try {
       await deletePortfolio(portfolioId);
       setPortfolios((prev) => prev.filter((item) => item.id !== portfolioId));
+      removePortfolioProfileImage(portfolioId);
       alert("명함이 삭제되었습니다.");
     } catch (err) {
       console.error("명함 삭제 에러:", err);
@@ -170,6 +172,7 @@ export default function CardsPage() {
             const cardLink = isDraft 
               ? `/create?portfolioId=${item.id}&step=${nextStep}`
               : `/portfolio?id=${item.id}`; // 추후 slug가 생기면 ?slug=${item.slug}로 변경
+            const localProfileImg = getPortfolioProfileImage(item.id);
 
             return (
               <Link key={item.id} href={cardLink} className={styles.card}>
@@ -204,8 +207,8 @@ export default function CardsPage() {
                 
                 <div className={styles.cardBody}>
                   <div className={styles.cardThumb}>
-                    {item.profileImg ? (
-                      <img src={item.profileImg} alt="프로필" className={styles.thumbImg} />
+                    {(item.profileImg || localProfileImg) ? (
+                      <img src={item.profileImg || localProfileImg} alt="프로필" className={styles.thumbImg} />
                     ) : (
                       <div className={styles.thumbPlaceholder}>No Image</div>
                     )}
