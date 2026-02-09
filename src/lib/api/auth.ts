@@ -1,12 +1,6 @@
-import { buildApiUrl } from "@/lib/api/config";
+﻿import { buildApiUrl } from "@/lib/api/config";
 
-import {
-  extractTokens,
-  getAccessToken,
-  setTokens,
-  TokenPair,
-} from "@/lib/auth/tokens";
-const API_BASE = "https://api.onepageme.kr";
+import { extractTokens, getAccessToken, setTokens } from "@/lib/auth/tokens";
 
 export type LoginPayload = {
   email: string;
@@ -29,6 +23,12 @@ export type GoogleLoginTokenResponse = {
     refreshToken?: string;
     tokenType?: string;
   };
+};
+
+export type SignupInfo = {
+  email: string;
+  name?: string;
+  tempUserKey?: string;
 };
 
 const SUCCESS_RESPONSE_CODE = "SUCCESS";
@@ -89,7 +89,7 @@ export async function resetMemberPassword(payload: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify(payload),
@@ -184,51 +184,27 @@ export async function exchangeGoogleLoginCode(payload: {
   return data;
 }
 
-export async function fetchSignupInfo(): Promise<{ email: string; name?: string }> {
+export async function fetchSignupInfo(): Promise<SignupInfo> {
   const accessToken = getAccessToken();
-  const res = await fetch(`${API_BASE}/api/signup/info`, {
+  const res = await fetch(buildApiUrl("/api/signup/info"), {
     headers: {
       "Content-Type": "application/json",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
-    credentials: "include", // 필요 없으면 제거
+    credentials: "include",
+    cache: "no-store",
   });
 
   if (!res.ok) throw new Error("signup info 조회 실패");
 
   const json = await res.json();
-  // 백 응답 포맷에 맞춰 파싱 (예: json.data.email)
   const email = json?.data?.email ?? json?.email ?? "";
   const name = json?.data?.name ?? json?.name ?? undefined;
+  const tempUserKey = json?.data?.tempUserKey ?? json?.tempUserKey ?? undefined;
 
-  return { email, name };
+  return { email, name, tempUserKey };
 }
 
-export async function loginMemberZeroPassword(email_s: string) {
-  const res = await fetch(`${API_BASE}/api/members/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email : email_s, password: "0" }),
-  });
-
-  const json = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    // 서버가 200인데 code로 실패를 주는 타입일 수도 있어서 아래도 같이 방어
-    const code = json?.code;
-    const message = json?.message ?? "로그인 실패";
-    throw new Error(code ? `${code}:${message}` : message);
-  }
-
-  // 200인데 code로 실패 주는 경우도 방어
-  if (json?.code && json.code !== "SUCCESS" && json.code !== "OK") {
-    const code = json.code;
-    const message = json?.message ?? "로그인 실패";
-    throw new Error(`${code}:${message}`);
-  }
-
-  return json;
-}
 export async function agreeGoogleSignup(payload: {
   tempUserKey: string;
   consents: {
@@ -238,12 +214,13 @@ export async function agreeGoogleSignup(payload: {
     SMS_NOTIFICATION: boolean;
     EMAIL_NOTIFICATION: boolean;
   };
-  name: string; // 백이 name 받으면 유지, 아니면 제거
+  name: string;
 }) {
-  const res = await fetch(`${API_BASE}/api/signup`, {
+  const res = await fetch(buildApiUrl("/api/signup"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
 
   if (res.status === 403) {

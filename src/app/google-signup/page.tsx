@@ -1,13 +1,19 @@
-// src/app/google-signup/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
-import styles from "./google-signup.module.css"; // 새 CSS 만들기(또는 signup.module.css 재사용)
+import styles from "./google-signup.module.css";
 import Modal from "@/components/Modal";
 import ConfirmModal from "@/components/ConfirmModal";
-import { agreeGoogleSignup } from "@/lib/api/auth";
+import { agreeGoogleSignup, fetchSignupInfo } from "@/lib/api/auth";
+
+function clearGoogleSignupStorage() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("google_signup_email");
+  localStorage.removeItem("google_signup_name");
+  localStorage.removeItem("tempUserKey");
+}
 
 export default function GoogleSignupPage() {
   const router = useRouter();
@@ -22,13 +28,59 @@ export default function GoogleSignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openCancelConfirm, setOpenCancelConfirm] = useState(false);
 
-  // ✅ email/name 초기값 세팅
   useEffect(() => {
-    const storedEmail = localStorage.getItem("google_signup_email") ?? "";
-    const storedName = localStorage.getItem("google_signup_name") ?? "";
-    setEmail(storedEmail);
-    setName(storedName);
-  }, []);
+    if (typeof window === "undefined") return;
+
+    let cancelled = false;
+
+    const init = async () => {
+      const tempUserKey = localStorage.getItem("tempUserKey") ?? "";
+      const storedEmail = localStorage.getItem("google_signup_email") ?? "";
+      const storedName = localStorage.getItem("google_signup_name") ?? "";
+
+      if (!tempUserKey) {
+        router.replace("/login");
+        return;
+      }
+
+      setEmail(storedEmail);
+      setName(storedName);
+
+      if (storedEmail) {
+        return;
+      }
+
+      try {
+        const info = await fetchSignupInfo();
+        if (cancelled) return;
+
+        const infoEmail = info.email?.trim() ?? "";
+        const infoName = info.name?.trim() ?? "";
+
+        if (infoEmail) {
+          setEmail(infoEmail);
+          localStorage.setItem("google_signup_email", infoEmail);
+        }
+
+        if (infoName && !storedName) {
+          setName(infoName);
+          localStorage.setItem("google_signup_name", infoName);
+        }
+
+        if (info.tempUserKey) {
+          localStorage.setItem("tempUserKey", info.tempUserKey);
+        }
+      } catch {
+        // Ignore init fetch failure and keep page usable with localStorage values.
+      }
+    };
+
+    void init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const canSubmit = name.trim().length > 0 && !!email && agreeTerms && agreePrivacy;
 
@@ -38,9 +90,8 @@ export default function GoogleSignupPage() {
 
     setIsSubmitting(true);
     try {
-      const tempUserKey = localStorage.getItem("tempUserKey") || ""; // 백에서 준다면 저장해두는 방식으로
+      const tempUserKey = localStorage.getItem("tempUserKey") || "";
       if (!tempUserKey) {
-        // tempUserKey가 꼭 필요한 명세라면, signup/info에서 받아서 저장하도록 바꿔야 함
         throw new Error("tempUserKey가 없습니다. 다시 시도해주세요.");
       }
 
@@ -53,10 +104,10 @@ export default function GoogleSignupPage() {
           SMS_NOTIFICATION: false,
           EMAIL_NOTIFICATION: false,
         },
-        // name을 같이 보내야 하면 백 명세에 맞춰 payload 확장
         name,
       });
 
+      clearGoogleSignupStorage();
       alert("구글 회원가입이 완료되었습니다.");
       router.replace("/");
     } catch (error) {
@@ -155,11 +206,12 @@ export default function GoogleSignupPage() {
         title="구글 회원가입 취소"
         message="정말 구글 회원가입을 취소하시겠습니까?"
         onConfirm={() => {
+          clearGoogleSignupStorage();
           setOpenCancelConfirm(false);
-          router.replace("/");
+          router.replace("/login");
         }}
         onCancel={() => setOpenCancelConfirm(false)}
       />
     </div>
   );
-} 
+}
