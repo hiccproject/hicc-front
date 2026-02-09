@@ -131,8 +131,13 @@ export async function changeMemberPassword(payload: {
   return data;
 }
 
-export async function deleteMemberAccount() {
-  return apiFetch("/api/mypage/delete", {
+export type DeleteAccountResponse = {
+  redirectUrl?: string;
+  message?: string;
+};
+
+export async function deleteMemberAccount(): Promise<DeleteAccountResponse> {
+  return apiFetch<DeleteAccountResponse>("/api/mypage/delete", {
     method: "DELETE",
     auth: true,
   });
