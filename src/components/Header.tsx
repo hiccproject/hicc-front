@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -11,22 +11,43 @@ const DEFAULT_PROFILE_IMG = "/default-avatar.png";
 
 export default function Header() {
   const router = useRouter();
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [profileImg, setProfileImg] = useState<string>(DEFAULT_PROFILE_IMG);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // 컴포넌트 마운트 시 토큰 존재 여부를 확인하여 로그인 상태를 설정합니다.
-  useEffect(() => {
+
+  // 토큰/프로필 동기화 함수
+  const syncAuthState = useCallback(() => {
     const token = getAccessToken();
-    if (token) {
-      setIsLoggedIn(true);
-    }
+    setIsLoggedIn(!!token);
 
     const savedProfileImg = localStorage.getItem("profileImg");
-    if (savedProfileImg) {
-      setProfileImg(savedProfileImg);
-    }
+    setProfileImg(savedProfileImg || DEFAULT_PROFILE_IMG);
   }, []);
+
+  // 1) 최초 마운트 + 2) auth-changed(같은 탭) + 3) storage(다른 탭) 동기화
+  useEffect(() => {
+    syncAuthState();
+
+    const handleAuthChanged = () => syncAuthState();
+    const handleStorage = (e: StorageEvent) => {
+      // accessToken/refreshToken/profileImg 변경 시에만 반영
+      if (e.key === "accessToken" || e.key === "refreshToken" || e.key === "profileImg") {
+        syncAuthState();
+      }
+    };
+
+    window.addEventListener("auth-changed", handleAuthChanged);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("auth-changed", handleAuthChanged);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [syncAuthState]);
+
   // 외부 클릭 감지 로직
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -34,20 +55,25 @@ export default function Header() {
         setIsDropdownOpen(false);
       }
     };
+
     if (isDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isDropdownOpen]);
-  // 로그아웃 함수
+
+  // 로그아웃
   const handleLogout = () => {
     clearTokens();
-    setIsLoggedIn(false);
+    // 같은 탭에서도 Header가 즉시 반영되도록 커스텀 이벤트 발생
+    window.dispatchEvent(new Event("auth-changed"));
+
     setIsDropdownOpen(false);
     alert("로그아웃 되었습니다.");
-    router.push("/"); // 메인으로 이동
+    router.push("/");
   };
 
   return (
@@ -67,18 +93,22 @@ export default function Header() {
       <nav className={styles.nav}>
         {!isLoggedIn ? (
           <>
-            <Link href="/signup" className={styles.navLink}>회원가입</Link>
-            <Link href="/login" className={styles.navLink}>로그인</Link>
+            <Link href="/signup" className={styles.navLink}>
+              회원가입
+            </Link>
+            <Link href="/login" className={styles.navLink}>
+              로그인
+            </Link>
           </>
         ) : (
           <div className={styles.profileContainer} ref={dropdownRef}>
-            <button 
+            <button
               className={styles.profileCircle}
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
               aria-label="사용자 메뉴"
               style={{ backgroundImage: `url(${profileImg})` }}
             />
-            
+
             {isDropdownOpen && (
               <div className={styles.dropdown}>
                 <Link
@@ -88,18 +118,16 @@ export default function Header() {
                 >
                   마이페이지
                 </Link>
-                {/* [수정] href를 '/portfolio'에서 목록 페이지인 '/cards'로 변경 */}
-                <Link 
-                  href="/cards" 
-                  className={styles.dropdownItem} 
+
+                <Link
+                  href="/cards"
+                  className={styles.dropdownItem}
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   내 명함 목록
                 </Link>
-                <button 
-                  className={styles.dropdownItem}
-                  onClick={handleLogout}
-                >
+
+                <button className={styles.dropdownItem} onClick={handleLogout}>
                   로그아웃
                 </button>
               </div>
