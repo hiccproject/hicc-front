@@ -46,9 +46,8 @@ export default function FindPasswordPage() {
 
     setIsSending(true);
     try {
-      const res = await sendVerificationMail(email);
-      const msg = typeof res === "object" && res?.message ? res.message : res;
-      alert(msg || "인증번호가 발송되었습니다.");
+      await sendVerificationMail(email);
+      alert("인증번호가 발송되었습니다.");
       setIsMailSent(true);
       setIsMailVerified(false);
     } catch (error) {
