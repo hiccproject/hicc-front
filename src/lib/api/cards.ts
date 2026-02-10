@@ -1,5 +1,7 @@
 import type { Card } from "@/types/card";
 import { apiFetch } from "@/lib/api/client";
+import { getAccessToken } from "@/lib/auth/tokens";
+import { getStoredProfile } from "@/lib/auth/profile";
 import { MOCK_PORTFOLIOS } from "@/mock/portfolios"; // [NEW] 상세 포트폴리오 Mock Import
 
 // 랜덤 명함 조회 응답 타입
@@ -23,6 +25,63 @@ type PortfolioItem = {
   lastStep: number;
   updatedAt: string;
 };
+
+type TitleParts = {
+  name: string;
+  role: string;
+};
+
+function normalizeTitleParts(title?: string | null): TitleParts {
+  if (!title || title === "null - null") {
+    return { name: "작성 중인 명함", role: "미정" };
+  }
+
+  if (title.includes(" - ")) {
+    const parts = title.split(" - ");
+    if (parts.length >= 2) {
+      return { name: parts[0] || "제목 없음", role: parts[1] || "Role" };
+    }
+  }
+
+  return { name: title || "제목 없음", role: "Role" };
+}
+
+function sortByUpdatedDesc(list: PortfolioItem[]) {
+  return [...list].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  DEVELOPMENT: "DEVELOPMENT",
+  DESIGN: "DESIGN",
+  MARKETING: "MARKETING",
+  PLANNING: "PLANNING",
+  BUSINESS: "BUSINESS",
+  MANAGEMENT: "MANAGEMENT",
+  FINANCE: "FINANCE",
+  SERVICE: "SERVICE",
+  ENGINEERING: "ENGINEERING",
+  MEDIA: "MEDIA",
+  MEDICAL: "MEDICAL",
+  OTHERS: "OTHERS",
+};
+
+function getCategoryLabel(value?: string | null) {
+  if (!value) return "";
+  return CATEGORY_LABELS[value] || value;
+}
+
+async function fetchPortfolioDetailById(portfolioId: number): Promise<PortfolioDetailData | null> {
+  try {
+    const share = await getPortfolioShareLink(portfolioId);
+    const slug = share?.data?.trim();
+    if (!slug) return null;
+    const detail = await getPortfolioDetail(slug);
+    return detail?.data ?? null;
+  } catch (error) {
+    console.warn("Failed to fetch portfolio detail by id:", error);
+    return null;
+  }
+}
 
 /**
  * 안전하게 토큰 가져오기 (SSR 이슈 방지)
@@ -78,6 +137,9 @@ export async function getRecentPortfolioId(): Promise<{ id: number; status: stri
  * 3. 실패하거나 데이터 없으면 null
  */
 export async function fetchMyCard(): Promise<Card | null> {
+  const token = getAccessToken();
+  if (!token) return null;
+
   try {
     // ✅ auth:true로 호출하면 Authorization 자동 + 401/403면 refresh 시도
     const json = await apiFetch<any>("/api/portfolios/my", {
@@ -88,36 +150,83 @@ export async function fetchMyCard(): Promise<Card | null> {
     const list: PortfolioItem[] = Array.isArray(json) ? json : json.data || [];
     if (list.length === 0) return null;
 
-    const sortedList = list.sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    const sortedList = sortByUpdatedDesc(list);
+    const publishedList = sortedList.filter((item) => item.status === "PUBLISHED");
+    const completedDrafts = sortedList.filter(
+      (item) => item.status === "DRAFT" && (item.lastStep ?? 0) >= 5
+    );
+    const inProgressDrafts = sortedList.filter(
+      (item) => item.status === "DRAFT" && (item.lastStep ?? 0) < 5
     );
 
-    const draftCard = sortedList.find((item) => item.status === "DRAFT");
-    const publishedCard = sortedList.find((item) => item.status === "PUBLISHED");
-    const selected = draftCard || publishedCard;
-    if (!selected) return null;
-
-    let name = selected.title || "제목 없음";
-    let role = "Role";
-
-    if (name === "null - null") {
-      name = "작성 중인 명함";
-      role = "미정";
-    } else if (name.includes(" - ")) {
-      const parts = name.split(" - ");
-      if (parts.length >= 2) {
-        name = parts[0];
-        role = parts[1];
-      }
+    const profile = getStoredProfile();
+    const storedName = profile?.name?.trim();
+    const published = publishedList[0];
+    if (published) {
+      const { name, role } = normalizeTitleParts(published.title);
+      const detail = await fetchPortfolioDetailById(published.id);
+      const intro = detail?.summaryIntro?.trim() || "";
+      const tags = Array.isArray(detail?.tags) ? detail?.tags : [];
+      const categoryLabel = getCategoryLabel(detail?.category);
+      return {
+        id: published.id.toString(),
+        name: storedName || name,
+        role: categoryLabel,
+        intro,
+        profileImage: detail?.profileImg || published.profileImg || undefined,
+        email: detail?.email || null,
+        phone: detail?.phone || null,
+        location: detail?.location || null,
+        status: published.status,
+        isMine: true,
+        linkHref: "/portfolio",
+        tags,
+      };
     }
 
-    return {
-      id: selected.id.toString(),
-      name,
-      role,
-      intro: selected.status === "DRAFT" ? "이어서 작성하기" : "포트폴리오 보러가기",
-      profileImage: selected.profileImg || undefined,
-    };
+    const privateCard = completedDrafts[0];
+    if (privateCard) {
+      const { name, role } = normalizeTitleParts(privateCard.title);
+      const detail = await fetchPortfolioDetailById(privateCard.id);
+      const intro = detail?.summaryIntro?.trim() || "";
+      const tags = Array.isArray(detail?.tags) ? detail?.tags : [];
+      const categoryLabel = getCategoryLabel(detail?.category);
+      return {
+        id: privateCard.id.toString(),
+        name: storedName || name,
+        role: categoryLabel,
+        intro,
+        profileImage: detail?.profileImg || privateCard.profileImg || undefined,
+        email: detail?.email || null,
+        phone: detail?.phone || null,
+        location: detail?.location || null,
+        status: privateCard.status,
+        isMine: true,
+        badge: "비공개됨",
+        linkHref: `/create?portfolioId=${privateCard.id}&mode=edit`,
+        tags,
+      };
+    }
+
+    if (inProgressDrafts.length > 0) {
+      const singleDraft = inProgressDrafts.length === 1 ? inProgressDrafts[0] : null;
+      const linkHref = singleDraft
+        ? `/create?portfolioId=${singleDraft.id}&step=${singleDraft.lastStep || 1}`
+        : "/cards";
+
+      return {
+        id: singleDraft ? singleDraft.id.toString() : "in-progress",
+        name: "명함 이어서 작성하기",
+        role: singleDraft ? "진행 중" : "작성 중인 명함",
+        intro: singleDraft ? "바로 이어서 작성하기" : "작성 중인 명함 목록 보기",
+        profileImage: singleDraft?.profileImg || undefined,
+        status: "DRAFT",
+        isMine: true,
+        linkHref,
+      };
+    }
+
+    return null;
   } catch (e) {
     console.error("Failed to fetch my card:", e);
     return null;
@@ -130,6 +239,7 @@ export async function fetchMyCard(): Promise<Card | null> {
 export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
   // 1. 내 명함 가져오기 (API 연동, 실패 시 null)
   const myCard = await fetchMyCard();
+  const otherLimit = myCard ? Math.max(limit - 1, 0) : limit;
 
   // 2. 상세 포트폴리오 Mock 데이터를 Card 타입으로 변환 (배경 카드용)
   const mockCards: Card[] = MOCK_PORTFOLIOS.map((portfolio) => ({
@@ -146,7 +256,7 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
   const shuffled = [...mockCards]
     .filter(isPublicCard)
     .sort(() => Math.random() - 0.5)
-    .slice(0, limit);
+    .slice(0, otherLimit);
 
   return {
     myCard,

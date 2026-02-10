@@ -70,24 +70,44 @@ export default function RandomCardWall() {
                   setCurrentIndex(index);
                 } else if (index === currentIndex) {
                   // 중앙 카드 클릭 시 해당 지원자의 포트폴리오 페이지로 이동
-                  // 경로 형식은 프로젝트 구조에 따라 /portfolio/[id] 등으로 설정 가능합니다.
-                  router.push(`/portfolio/${card.id}`); 
+                  const target = card.linkHref || `/portfolio/${card.id}`;
+                  if (target) {
+                    router.push(target);
+                  }
                 }
               }}
             >
-              <div className={styles.avatarCircle} />
+              {card.badge ? <span className={styles.statusBadge}>{card.badge}</span> : null}
+              <div className={styles.avatarCircle}>
+                {card.profileImage ? (
+                  <img src={card.profileImage} alt={`${card.name} 프로필`} />
+                ) : null}
+              </div>
               <div className={styles.cardHeader}>
                 <h4 className={styles.name}>{card.name}</h4>
                 <span className={styles.role}>{card.role}</span>
               </div>
-              <p className={styles.intro}>{card.intro}</p>
+              {card.intro ? <p className={styles.intro}>{card.intro}</p> : null}
               
-              <div className={styles.dummyTags}>
-                <span>UX/UI</span><span>AI</span><span>Motion</span>
-              </div>
-              <div className={styles.dummyLinks}>
-                <div className={styles.linkLine} />
-                <div className={styles.linkLine} />
+              <div className={styles.contactList}>
+                {card.email ? (
+                  <div className={styles.contactChip}>
+                    <span className={styles.iconMail} aria-hidden />
+                    <span>{card.email}</span>
+                  </div>
+                ) : null}
+                {card.phone ? (
+                  <div className={styles.contactChip}>
+                    <span className={styles.iconPhone} aria-hidden />
+                    <span>{card.phone}</span>
+                  </div>
+                ) : null}
+                {card.location ? (
+                  <div className={styles.contactChip}>
+                    <span className={styles.iconLocation} aria-hidden />
+                    <span>{card.location}</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           );

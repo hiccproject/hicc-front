@@ -16,6 +16,13 @@ export type Card = {
   projects?: Project[];
   status?: "DRAFT" | "PUBLISHED";
   isPublic?: boolean;
+  isMine?: boolean;
+  badge?: string;
+  linkHref?: string;
+  tags?: string[];
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
 };
 
 export interface Link {
