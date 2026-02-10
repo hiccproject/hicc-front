@@ -202,9 +202,10 @@ export default function MyPage() {
 
   return (
     <div className={styles.bg}>
-      <main className={styles.shell}>
+      <div className={styles.headerWrap}>
         <Header />
-
+      </div>
+      <main className={styles.shell}>
         <div className={styles.body}>
           <aside className={styles.sidebar}>
             <div className={styles.profileCircle}>

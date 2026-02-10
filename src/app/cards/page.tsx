@@ -150,7 +150,9 @@ export default function CardsPage() {
 
   return (
     <div className={styles.container}>
-      <Header />
+      <div className={styles.headerWrap}>
+        <Header />
+      </div>
       
       <main className={styles.main}>
         <div className={styles.pageHeader}>
