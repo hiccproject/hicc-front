@@ -23,6 +23,9 @@ export type Card = {
   email?: string | null;
   phone?: string | null;
   location?: string | null;
+  category?: string | null;
+  subCategory?: string | null;
+  progressMode?: "single" | "multiple";
 };
 
 export interface Link {

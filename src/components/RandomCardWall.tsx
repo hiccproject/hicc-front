@@ -85,30 +85,38 @@ export default function RandomCardWall() {
               </div>
               <div className={styles.cardHeader}>
                 <h4 className={styles.name}>{card.name}</h4>
-                <span className={styles.role}>{card.role}</span>
+                {!card.progressMode || card.progressMode === "single" ? (
+                  card.category || card.subCategory ? (
+                    <span className={styles.categoryBadge}>
+                      {[card.category, card.subCategory].filter(Boolean).join(" / ")}
+                    </span>
+                  ) : null
+                ) : null}
               </div>
               {card.intro ? <p className={styles.intro}>{card.intro}</p> : null}
               
-              <div className={styles.contactList}>
-                {card.email ? (
-                  <div className={styles.contactChip}>
-                    <span className={styles.iconMail} aria-hidden />
-                    <span>{card.email}</span>
-                  </div>
-                ) : null}
-                {card.phone ? (
-                  <div className={styles.contactChip}>
-                    <span className={styles.iconPhone} aria-hidden />
-                    <span>{card.phone}</span>
-                  </div>
-                ) : null}
-                {card.location ? (
-                  <div className={styles.contactChip}>
-                    <span className={styles.iconLocation} aria-hidden />
-                    <span>{card.location}</span>
-                  </div>
-                ) : null}
-              </div>
+              {!card.progressMode ? (
+                <div className={styles.contactList}>
+                  {card.email ? (
+                    <div className={styles.contactChip}>
+                      <span className={styles.iconMail} aria-hidden />
+                      <span>{card.email}</span>
+                    </div>
+                  ) : null}
+                  {card.phone ? (
+                    <div className={styles.contactChip}>
+                      <span className={styles.iconPhone} aria-hidden />
+                      <span>{card.phone}</span>
+                    </div>
+                  ) : null}
+                  {card.location ? (
+                    <div className={styles.contactChip}>
+                      <span className={styles.iconLocation} aria-hidden />
+                      <span>{card.location}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           );
         })}

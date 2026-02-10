@@ -92,8 +92,21 @@
   object-fit: cover;
 }
 
+.cardHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .name { font-size: 20px; font-weight: 800; margin: 0; }
-.role { font-size: 13px; color: #666; font-weight: 600; margin-left: 6px; }
+.categoryBadge {
+  font-size: 11px;
+  color: #7a7a7a;
+  background: #f1f1f1;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 600;
+}
 .intro { font-size: 14px; color: #444; margin: 10px 0 30px; line-height: 1.5; }
 
 .contactList {

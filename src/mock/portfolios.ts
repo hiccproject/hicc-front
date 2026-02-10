@@ -29,7 +29,7 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
     id: 101,
     name: "정원",
     category: "디자인",
-    subCategory: "UI/UX Designer",
+    subCategory: "UI/UX 디자이너",
     profileImg: null, // 이미지 없으면 placeholder 사용
     email: "garden@example.com",
     phone: "010-1111-2222",
@@ -52,8 +52,8 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
   {
     id: 102,
     name: "제정모",
-    category: "개발",
-    subCategory: "Backend Engineer",
+    category: "IT·개발",
+    subCategory: "백엔드",
     profileImg: null,
     email: "jejeongmo@example.com",
     phone: "010-3333-4444",
@@ -76,8 +76,8 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
   {
     id: 103,
     name: "박준호",
-    category: "기획",
-    subCategory: "Product Manager",
+    category: "기획.전략",
+    subCategory: "PM",
     profileImg: null,
     email: "junho@example.com",
     phone: "010-5555-6666",
@@ -94,8 +94,8 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
   {
     id: 104,
     name: "최서연",
-    category: "개발",
-    subCategory: "iOS Developer",
+    category: "IT·개발",
+    subCategory: "모바일",
     profileImg: null,
     email: "seoyeon@example.com",
     phone: "010-7777-8888",
@@ -117,8 +117,8 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
   {
     id: 105,
     name: "오지훈",
-    category: "개발",
-    subCategory: "DevOps Engineer",
+    category: "IT·개발",
+    subCategory: "DevOps",
     profileImg: null,
     email: "jihun@example.com",
     phone: "010-9999-0000",
