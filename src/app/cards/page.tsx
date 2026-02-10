@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import styles from "./cards.module.css";
 import Header from "@/components/Header";
 import { getAccessToken } from "@/lib/auth/tokens";
-import { deletePortfolio } from "@/lib/api/cards";
+import { deletePortfolio, updatePortfolioStatus } from "@/lib/api/cards";
 import { getPortfolioProfileImage, removePortfolioProfileImage } from "@/lib/storage/portfolio-images";
 
 // API 응답 데이터 타입 정의
@@ -25,6 +25,7 @@ export default function CardsPage() {
   const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingMap, setUpdatingMap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     async function fetchMyPortfolios() {
@@ -115,6 +116,38 @@ export default function CardsPage() {
     });
   };
 
+  const handleToggleStatus = async (
+    e: MouseEvent<HTMLButtonElement>,
+    item: PortfolioItem
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (updatingMap[item.id]) return;
+
+    const nextStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+
+    if (item.status === "DRAFT" && item.lastStep < 5) {
+      alert("명함 작성이 완료된 후 공개할 수 있습니다.");
+      return;
+    }
+
+    try {
+      setUpdatingMap((prev) => ({ ...prev, [item.id]: true }));
+      await updatePortfolioStatus(item.id, nextStatus);
+      setPortfolios((prev) =>
+        prev.map((portfolio) =>
+          portfolio.id === item.id ? { ...portfolio, status: nextStatus } : portfolio
+        )
+      );
+    } catch (err) {
+      console.error("공개 상태 변경 에러:", err);
+      alert("공개 상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setUpdatingMap((prev) => ({ ...prev, [item.id]: false }));
+    }
+  };
+
   return (
     <div className={styles.container}>
       <Header />
@@ -165,18 +198,42 @@ export default function CardsPage() {
               : item.title;
 
             const isDraft = item.status === "DRAFT";
+            const isComplete = (item.lastStep || 0) >= 5;
+            const isUpdating = updatingMap[item.id];
             
             // 링크: 작성 중이면 create 페이지, 완료되면 조회 페이지
             // step이 0이거나 없을 경우 1로 기본 설정
             const nextStep = item.lastStep || 1;
-            const cardLink = isDraft 
+            const cardLink = isDraft && !isComplete
               ? `/create?portfolioId=${item.id}&step=${nextStep}`
               : `/portfolio?id=${item.id}`; // 추후 slug가 생기면 ?slug=${item.slug}로 변경
             const localProfileImg = getPortfolioProfileImage(item.id);
 
             return (
               <Link key={item.id} href={cardLink} className={styles.card}>
+                <div className={styles.statusGroup}>
+                  <span className={`${styles.badge} ${isDraft ? styles.badgeDraft : styles.badgePublished}`}>
+                    {isDraft ? (isComplete ? "비공개됨" : "작성 중") : "공개됨"}
+                  </span>
+                  {item.lastStep < 5 && isDraft && (
+                    <span className={styles.stepInfo}>단계 {item.lastStep}/5</span>
+                  )}
+                </div>
                 <div className={styles.cardActions}>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!isDraft}
+                    aria-label="명함 공개 여부 변경"
+                    className={`${styles.visibilityToggle} ${!isDraft ? styles.visibilityOn : ""}`}
+                    onClick={(e) => handleToggleStatus(e, item)}
+                    disabled={isUpdating}
+                  >
+                    <span className={styles.toggleLabel}>{isDraft ? "비공개" : "공개"}</span>
+                    <span className={styles.toggleTrack}>
+                      <span className={styles.toggleThumb} />
+                    </span>
+                  </button>
                   <button
                     type="button"
                     className={`${styles.cardActionBtn} ${styles.editBtn}`}
@@ -196,14 +253,6 @@ export default function CardsPage() {
                     삭제
                   </button>
                 </div>
-                <div className={styles.cardHeader}>
-                  <span className={`${styles.badge} ${isDraft ? styles.badgeDraft : styles.badgePublished}`}>
-                    {isDraft ? "작성 중" : "공개됨"}
-                  </span>
-                  {item.lastStep < 5 && isDraft && (
-                    <span className={styles.stepInfo}>단계 {item.lastStep}/5</span>
-                  )}
-                </div>
                 
                 <div className={styles.cardBody}>
                   <div className={styles.cardThumb}>
@@ -221,7 +270,7 @@ export default function CardsPage() {
                     {formatDate(item.updatedAt)} 업데이트
                   </span>
                   <span className={styles.actionText}>
-                    {isDraft ? "이어 만들기 →" : "보러 가기 →"}
+                    {isDraft && !isComplete ? "이어 만들기 →" : "보러 가기 →"}
                   </span>
                 </div>
               </Link>

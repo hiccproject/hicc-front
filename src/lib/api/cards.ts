@@ -252,3 +252,14 @@ export async function deletePortfolio(portfolioId: number) {
     auth: true,
   });
 }
+
+export async function updatePortfolioStatus(
+  portfolioId: number,
+  status: "DRAFT" | "PUBLISHED"
+) {
+  return apiFetch(`/api/portfolios/${portfolioId}/status`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify({ status }),
+  });
+}
