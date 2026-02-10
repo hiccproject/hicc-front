@@ -7,6 +7,8 @@ interface CardViewProps {
   canViewStats?: boolean;
 }
 
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
+
 type CardSlide =
   | { key: string; type: "profile" }
   | { key: string; type: "stats" }
@@ -60,7 +62,14 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
   const renderProfileSlide = () => (
     <>
       <div className={styles.cardTopRow}>
-        <img src={data.profileImg || "/default-avatar.png"} alt={name} className={styles.cardAvatarCircle} />
+        <img
+          src={data.profileImg || DEFAULT_PROFILE_IMG}
+          alt={name}
+          className={styles.cardAvatarCircle}
+          onError={(event) => {
+            (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+          }}
+        />
         <div className={styles.cardIdentity}>
           <h2 className={styles.cardName}>{name}</h2>
           <span className={styles.cardRolePill}>{role}</span>
@@ -90,7 +99,14 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
     return (
       <>
         <div className={styles.cardTopRow}>
-          <img src={data.profileImg || "/default-avatar.png"} alt={name} className={styles.cardAvatarCircle} />
+          <img
+            src={data.profileImg || DEFAULT_PROFILE_IMG}
+            alt={name}
+            className={styles.cardAvatarCircle}
+            onError={(event) => {
+              (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+            }}
+          />
           <div className={styles.cardIdentity}>
             <h2 className={styles.cardName}>{name}</h2>
             <span className={styles.cardRolePill}>{role}</span>

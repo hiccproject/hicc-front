@@ -7,6 +7,7 @@ import type { Card } from "@/types/card";
 import { getHomeCards } from "@/lib/api/cards";
 
 const SHOW_COUNT = 10;
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
 
 export default function RandomCardWall() {
   const router = useRouter(); // router 인스턴스 생성
@@ -79,9 +80,13 @@ export default function RandomCardWall() {
             >
               {card.badge ? <span className={styles.statusBadge}>{card.badge}</span> : null}
               <div className={styles.avatarCircle}>
-                {card.profileImage ? (
-                  <img src={card.profileImage} alt={`${card.name} 프로필`} />
-                ) : null}
+                <img
+                  src={card.profileImage || DEFAULT_PROFILE_IMG}
+                  alt={`${card.name} 프로필`}
+                  onError={(event) => {
+                    (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+                  }}
+                />
               </div>
               <div className={styles.cardHeader}>
                 <h4 className={styles.name}>{card.name}</h4>
