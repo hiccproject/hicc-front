@@ -171,7 +171,7 @@ export default function CardsPage() {
         {/* 에러 발생 시 구체적인 메시지 표시 */}
         {error && (
           <div className={styles.errorState}>
-            <p>⚠️ {error}</p>
+            <p> 오류가 발생했습니다. </p>
             <button 
               onClick={() => window.location.reload()} 
               className={styles.retryBtn}
