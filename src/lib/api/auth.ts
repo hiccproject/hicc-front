@@ -16,16 +16,6 @@ export type SignupPayload = {
   termsAgreed: boolean;
 };
 
-export type GoogleLoginTokenResponse = {
-  code?: string;
-  message?: string;
-  data?: {
-    accessToken?: string;
-    refreshToken?: string;
-    tokenType?: string;
-  };
-};
-
 export type SignupInfo = {
   email: string;
   name?: string;
@@ -143,43 +133,6 @@ export async function deleteMemberAccount(): Promise<DeleteAccountResponse> {
   });
 }
 
-export async function requestGoogleLogin() {
-  const googleAuthStartUrl =
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_START_URL ??
-    "https://api.onepageme.kr/oauth2/authorization/google";
-
-  window.location.href = googleAuthStartUrl;
-}
-
-export async function exchangeGoogleLoginCode(payload: {
-  code: string;
-  redirectUri: string;
-}) {
-  const res = await fetch(buildApiUrl("/api/auth/login/google"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  const data = (await parseJsonSafe(res)) as GoogleLoginTokenResponse | null;
-
-  if (!res.ok || data?.code !== SUCCESS_RESPONSE_CODE) {
-    const message = data?.message ?? "구글 로그인에 실패했습니다.";
-    throw new Error(message);
-  }
-
-  const tokens = extractTokens(data);
-  if (!tokens.accessToken || !tokens.refreshToken) {
-    throw new Error("토큰 발급에 실패했습니다.");
-  }
-  setTokens(tokens);
-  return data;
-}
-
 export async function fetchSignupInfo(): Promise<SignupInfo> {
   const accessToken = getAccessToken();
   const res = await fetch(buildApiUrl("/api/signup/info"), {
@@ -201,31 +154,43 @@ export async function fetchSignupInfo(): Promise<SignupInfo> {
   return { email, name, tempUserKey };
 }
 
-export async function agreeGoogleSignup(payload: {
-  tempUserKey: string;
-  consents: {
-    SERVICE_TERMS: boolean;
-    PRIVACY_POLICY: boolean;
-    MARKETING: boolean;
-    SMS_NOTIFICATION: boolean;
-    EMAIL_NOTIFICATION: boolean;
-  };
-  name: string;
-}) {
-  const res = await fetch(buildApiUrl("/api/signup"), {
+export const GOOGLE_LOGIN_URL = "https://api.onepageme.kr/oauth2/authorization/google";
+/**
+ * 구글 로그인 시작: 백엔드 OAuth 시작 URL로 이동
+ * 백엔드가 로그인 성공 후
+ * - 기존 유저면 https://www.onepageme.kr/
+ * - 신규 유저면 https://www.onepageme.kr/terms
+ * 로 리다이렉트해줌
+ */
+/** 구글 로그인 시작: 백엔드 OAuth 시작 URL로 이동 */
+export function requestGoogleLogin() {
+  if (typeof window === "undefined") return;
+  window.location.assign(GOOGLE_LOGIN_URL);
+}
+
+export type GoogleConsentRequest = {
+  personalInfoAgreement: boolean;
+  serviceTermsAgreement: boolean;
+};
+
+export type GoogleConsentResponse = {
+  redirectUrl: string;
+  message: string;
+};
+
+/**
+ * 신규 유저 약관 동의 처리
+ * - 백엔드가 신규 유저 상태를 세션/쿠키로 식별하는 경우가 많아서 credentials: "include" 권장
+ * - accessToken이 없을 수 있으니 auth 헤더 강제 부착은 피하는 게 안전
+ */
+export async function agreeGoogleSignup(
+  payload: GoogleConsentRequest
+): Promise<GoogleConsentResponse> {
+  return apiFetch<GoogleConsentResponse>(buildApiUrl("/api/auth/google/consent"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    credentials: "include",
     cache: "no-store",
   });
-
-  if (res.status === 403) {
-    const json = await res.json().catch(() => ({}));
-    const msg = json?.message ?? "필수 약관에 동의하지 않았습니다.";
-    throw new Error(msg);
-  }
-
-  if (!res.ok) throw new Error("동의 처리 실패");
-
-  return res.json().catch(() => ({}));
 }

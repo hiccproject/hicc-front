@@ -1,3 +1,4 @@
+// src/app/signup/page.tsx
 "use client";
 
 import { useMemo, useState, useEffect } from "react";

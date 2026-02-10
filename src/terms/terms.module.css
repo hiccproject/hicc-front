@@ -1,0 +1,103 @@
+/* src/app/terms/terms.module.css */
+.bg {
+  min-height: 100vh;
+  background: #f7f7f8;
+}
+
+.shell {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.body {
+  margin-top: 12px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agreeBox {
+  border: 1px solid #ececf1;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agreeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.viewBtn {
+  background: transparent;
+  border: 0;
+  color: #4a67ff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.warn {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #d14343;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btnGhost {
+  background: #fff;
+  border-color: #e6e6ee;
+}
+
+.btnPrimary {
+  background: #4a67ff;
+  color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modalText {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 14px;
+}
