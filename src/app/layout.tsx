@@ -1,10 +1,24 @@
-import "./globals.css";
-import type { ReactNode } from "react";
+// src/app/layout.tsx
+import type { Metadata } from "next";
+import TokenQueryHandler from "@/components/TokenQueryHandler";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata: Metadata = {
+  title: "OnePageMe",
+  description: "One page portfolio service",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        {/* ✅ 로그인 성공 후 쿼리 토큰 처리 */}
+        <TokenQueryHandler />
+        {children}
+      </body>
     </html>
   );
 }

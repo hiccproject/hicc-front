@@ -5,13 +5,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
-import Header from "../../components/Header";
+import Header from "@/components/Header";
 import { loginMember, requestGoogleLogin } from "@/lib/api/auth";
-import { getStoredNameForLogin, getStoredProfile, setStoredNameForEmail, setStoredProfile } from "../../lib/auth/profile";
+import {
+  getStoredNameForLogin,
+  getStoredProfile,
+  setStoredNameForEmail,
+  setStoredProfile,
+} from "@/lib/auth/profile";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setemail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,12 +31,15 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await loginMember({ email, password });
+
       const storedProfile = getStoredProfile();
       if (storedProfile?.email && storedProfile?.name?.trim()) {
         setStoredNameForEmail(storedProfile.email, storedProfile.name);
       }
+
       const resolvedName = getStoredNameForLogin(email) || storedProfile?.name?.trim() || "";
       setStoredProfile({ name: resolvedName, email, password });
+
       const greetingName = resolvedName ? `${resolvedName}님` : "회원님";
       alert(`로그인 성공! ${greetingName} 환영합니다.`);
       router.push("/");
@@ -42,17 +50,15 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    try {
-      await requestGoogleLogin();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "구글 로그인에 실패했습니다.");
-    }
+  function handleGoogleLogin() {
+    // 구글 로그인은 "이동"이 전부.
+    // 이후 성공/신규 분기(/ 또는 /terms)는 백엔드 리다이렉트가 처리함.
+    requestGoogleLogin();
   }
 
   return (
-    <div className={styles.bg}> {/* 전체 회색 배경 */}
-      <main className={styles.shell}> {/* 중앙 흰색 사각형 */}
+    <div className={styles.bg}>
+      <main className={styles.shell}>
         <Header />
 
         <section className={styles.body}>
@@ -65,7 +71,7 @@ export default function LoginPage() {
                 className={styles.input}
                 value={email}
                 placeholder="이메일을 입력해주세요."
-                onChange={(e) => setemail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
               />
               <input
                 type="password"
@@ -87,21 +93,12 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            {/* 이미지의 소셜 로그인 구분선 구조 추가 */}
             <div className={styles.socialDivider}>
               <span>소셜 로그인</span>
             </div>
 
-            <button
-              type="button"
-              className={styles.btnGoogle}
-              onClick={handleGoogleLogin}
-            >
-              <img
-                src="/google.png"
-                alt="Google" 
-                className={styles.googleIcon} 
-              />
+            <button type="button" className={styles.btnGoogle} onClick={handleGoogleLogin}>
+              <img src="/google.png" alt="Google" className={styles.googleIcon} />
               Google 로그인
             </button>
           </form>
