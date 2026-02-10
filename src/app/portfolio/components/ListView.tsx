@@ -2,6 +2,8 @@ import { useState } from "react";
 import styles from "../portfolio.module.css";
 import type { PortfolioDetail, ProjectLink } from "../page";
 
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
+
 interface ListViewProps {
   data: PortfolioDetail;
   isOwner?: boolean;
@@ -21,7 +23,14 @@ export default function ListView({ data, isOwner = false }: ListViewProps) {
     <div className={styles.listLayout}>
       <aside className={styles.listAside}>
         <div className={styles.sideProfileCard}>
-          <img src={data.profileImg || "/default-avatar.png"} alt={name} className={styles.avatar} />
+          <img
+            src={data.profileImg || DEFAULT_PROFILE_IMG}
+            alt={name}
+            className={styles.avatar}
+            onError={(event) => {
+              (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+            }}
+          />
 
           <div className={styles.sideNameRow}>
             <h2 className={styles.sideName}>{name}</h2>

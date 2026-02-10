@@ -1,6 +1,8 @@
 import styles from "../portfolio.module.css";
 import type { PortfolioDetail } from "../page";
 
+const DEFAULT_PROFILE_IMG = "/default-avatar.png";
+
 interface GridViewProps {
   data: PortfolioDetail;
   isOwner?: boolean;
@@ -16,7 +18,14 @@ export default function GridView({ data, isOwner = false }: GridViewProps) {
       <div className={styles.gridTop}>
         <div className={styles.gridProfileArea}>
           <div className={styles.gridIdentityRow}>
-            <img src={data.profileImg || "/default-avatar.png"} alt={name} className={styles.gridAvatarSmall} />
+            <img
+              src={data.profileImg || DEFAULT_PROFILE_IMG}
+              alt={name}
+              className={styles.gridAvatarSmall}
+              onError={(event) => {
+                (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+              }}
+            />
             <div>
               <h2 className={styles.gridName}>{name}</h2>
               <span className={styles.gridRoleBadge}>{role}</span>

@@ -2,6 +2,7 @@ import type { Card } from "@/types/card";
 import { apiFetch } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/auth/tokens";
 import { getStoredProfile } from "@/lib/auth/profile";
+import { buildApiUrl } from "@/lib/api/config";
 import { MOCK_PORTFOLIOS } from "@/mock/portfolios"; // [NEW] 상세 포트폴리오 Mock Import
 
 // 랜덤 명함 조회 응답 타입
@@ -26,6 +27,22 @@ type PortfolioItem = {
   updatedAt: string;
   category?: string | null;
   subCategory?: string | null;
+};
+
+type PublicPortfolioListItem = {
+  slug: string | null;
+  profileImg: string | null;
+  categoryTitle: string | null;
+  subCategory: string | null;
+  tags?: string[];
+  updatedAt: string;
+  status?: "DRAFT" | "PUBLISHED";
+  isPublic?: boolean;
+};
+
+type PublicPortfolioListResponse = {
+  content: PublicPortfolioListItem[];
+  hasNext: boolean;
 };
 
 type TitleParts = {
@@ -70,6 +87,68 @@ const CATEGORY_LABELS: Record<string, string> = {
 function getCategoryLabel(value?: string | null) {
   if (!value) return "";
   return CATEGORY_LABELS[value] || value;
+}
+
+function isPublicListItem(item: PublicPortfolioListItem) {
+  if (item.status && item.status !== "PUBLISHED") return false;
+  if (item.isPublic === false) return false;
+  if (!item.slug) return false;
+  return true;
+}
+
+async function fetchPublicCards(limit: number): Promise<Card[]> {
+  try {
+    const params = new URLSearchParams();
+    params.set("sort", "LATEST");
+    params.set("page", "0");
+    params.set("size", String(Math.max(limit, 0)));
+
+    const res = await fetch(buildApiUrl(`/api/portfolios/list?${params.toString()}`), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) return [];
+    const data = (await res.json()) as PublicPortfolioListResponse;
+    const list = (data?.content ?? []).filter(isPublicListItem);
+
+    const detailed = await Promise.all(
+      list.map(async (item) => {
+        if (!item.slug) return { item, detail: null };
+        try {
+          const detail = await getPortfolioDetail(item.slug);
+          return { item, detail: detail?.data ?? null };
+        } catch {
+          return { item, detail: null };
+        }
+      })
+    );
+
+    return detailed.map(({ item, detail }, index) => {
+      const categoryLabel = getCategoryLabel(detail?.category);
+      const subCategory = detail?.subCategory || item.subCategory || "";
+      return {
+        id: item.slug ? `public-${item.slug}` : `public-${index}`,
+        name: item.categoryTitle ?? "미입력",
+        role: categoryLabel,
+        intro: detail?.summaryIntro?.trim() || "",
+        profileImage: detail?.profileImg || item.profileImg || undefined,
+        email: detail?.email || null,
+        phone: detail?.phone || null,
+        location: detail?.location || null,
+        status: "PUBLISHED",
+        isPublic: true,
+        category: categoryLabel || null,
+        subCategory,
+        tags: detail?.tags ?? item.tags ?? [],
+        linkHref: item.slug ? `/portfolio?slug=${encodeURIComponent(item.slug)}` : undefined,
+      };
+    });
+  } catch (error) {
+    console.warn("Failed to fetch public cards:", error);
+    return [];
+  }
 }
 
 async function fetchPortfolioDetailById(portfolioId: number): Promise<PortfolioDetailData | null> {
@@ -266,7 +345,10 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
   const myCard = await fetchMyCard();
   const otherLimit = myCard ? Math.max(limit - 1, 0) : limit;
 
-  // 2. 상세 포트폴리오 Mock 데이터를 Card 타입으로 변환 (배경 카드용)
+  // 2. 공개 명함 + Mock 데이터를 섞어 홈 카드로 노출
+  const publicCards = await fetchPublicCards(otherLimit);
+
+  // 3. 상세 포트폴리오 Mock 데이터를 Card 타입으로 변환 (배경 카드용)
   const mockCards: Card[] = MOCK_PORTFOLIOS.map((portfolio) => ({
     id: portfolio.id.toString(),
     name: portfolio.name, 
@@ -282,11 +364,10 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
     location: portfolio.location,
   }));
 
-  // 3. 랜덤 셔플 및 개수 제한
-  const shuffled = [...mockCards]
-    .filter(isPublicCard)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, otherLimit);
+  const mixedPool = [...publicCards, ...mockCards.filter(isPublicCard)];
+
+  // 4. 랜덤 셔플 및 개수 제한
+  const shuffled = mixedPool.sort(() => Math.random() - 0.5).slice(0, otherLimit);
 
   return {
     myCard,
