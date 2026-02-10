@@ -93,9 +93,6 @@ export default function Header() {
       <nav className={styles.nav}>
         {!isLoggedIn ? (
           <>
-            <Link href="/signup" className={styles.navLink}>
-              회원가입
-            </Link>
             <Link href="/login" className={styles.navLink}>
               로그인
             </Link>

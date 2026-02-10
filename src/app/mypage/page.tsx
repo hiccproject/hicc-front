@@ -130,8 +130,8 @@ export default function MyPage() {
     if (e) e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
 
     if (editingField === "password") {
-      if (passwordData.current !== password) {
-        alert("현재 비밀번호가 일치하지 않습니다.");
+      if (!passwordData.current.trim()) {
+        alert("현재 비밀번호를 입력해주세요.");
         return;
       }
       if (passwordData.new.length < 8) {
@@ -139,7 +139,7 @@ export default function MyPage() {
         return;
       }
       try {
-        await changeMemberPassword({
+        const response = await changeMemberPassword({
           currentPassword: passwordData.current,
           newPassword: passwordData.new,
         });
@@ -150,7 +150,10 @@ export default function MyPage() {
           password: passwordData.new,
         });
         setPasswordData({ current: "", new: "" });
-        alert("비밀번호가 변경되었습니다.");
+        alert(response?.message ?? "비밀번호가 변경되었습니다.");
+        if (response?.redirectUrl) {
+          router.push(response.redirectUrl);
+        }
       } catch (error) {
         alert(error instanceof Error ? error.message : "비밀번호 변경에 실패했습니다.");
         return;
@@ -161,12 +164,6 @@ export default function MyPage() {
         setStoredNameForEmail(emailId, tempValue);
       }
       setStoredProfile({ name: tempValue, email: emailId, password });
-    } else if (editingField === "email") {
-      setEmailId(tempValue);
-      if (name) {
-        setStoredNameForEmail(tempValue, name);
-      }
-      setStoredProfile({ name, email: tempValue, password });
     }
 
     setEditingField(null);
@@ -267,30 +264,11 @@ export default function MyPage() {
                 )}
               </div>
 
-              {/* 이메일 수정 */}
               <div className={styles.infoItem}>
-                {editingField === "email" ? (
-                  <form className={styles.editBlock} onSubmit={handleSave}>
-                    <input 
-                      className={styles.inputBar} 
-                      value={tempValue} 
-                      onChange={(e) => setTempValue(e.target.value)} 
-                      autoFocus
-                    />
-                    <div className={styles.editActions}>
-                      <button type="submit" className={styles.saveBtn}>저장</button>
-                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
-                    </div>
-                  </form>
-                ) : (
-                  <>
-                    <div className={styles.infoLabel}>
-                      <span className={styles.labelName}>이메일</span>
-                      <span className={styles.labelValue}>{emailId}</span>
-                    </div>
-                    <button className={styles.editBtn} onClick={() => startEdit("email", emailId)}>수정</button>
-                  </>
-                )}
+                <div className={styles.infoLabel}>
+                  <span className={styles.labelName}>이메일</span>
+                  <span className={styles.labelValue}>{emailId}</span>
+                </div>
               </div>
 
               {/* 비밀번호 수정 */}

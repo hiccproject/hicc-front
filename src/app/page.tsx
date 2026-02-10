@@ -24,7 +24,7 @@ export default function HomePage() {
 
   const primaryCta = isLoggedIn
     ? { href: "/create", label: "명함 만들기" }
-    : { href: "/signup", label: "가입하기" };
+    : { href: "/login", label: "시작하기" };
 
   return (
     <div className={styles.bg}>
