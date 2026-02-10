@@ -110,25 +110,29 @@ export async function changeMemberPassword(payload: {
   currentPassword: string;
   newPassword: string;
 }) {
-  const accessToken = getAccessToken();
-  const res = await fetch(buildApiUrl("/api/members/password"), {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    credentials: "include",
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  const data = await parseJsonSafe(res);
-  if (!res.ok) {
-    const message = data?.message ?? "비밀번호 변경에 실패했습니다.";
-    throw new Error(message);
+  try {
+    return await apiFetch<{ redirectUrl?: string; message?: string }>(
+      "/api/mypage/password",
+      {
+        method: "PATCH",
+        auth: true,
+        body: JSON.stringify(payload),
+      }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const isNotFound = message.includes("API Error 404") || message.includes("C007");
+    if (!isNotFound) throw error;
   }
 
-  return data;
+  return apiFetch<{ redirectUrl?: string; message?: string }>(
+    "/api/members/password",
+    {
+      method: "PATCH",
+      auth: true,
+      body: JSON.stringify(payload),
+    }
+  );
 }
 
 export type DeleteAccountResponse = {
