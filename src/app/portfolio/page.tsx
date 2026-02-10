@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./portfolio.module.css";
 import Header from "@/components/Header";
 import ListView from "./components/ListView";
@@ -212,6 +212,7 @@ function buildPortfolioShareUrl(shareValueOrSlug: string): string {
 }
 
 export default function PortfolioPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const requestedSlug = useMemo(() => normalizeSlug(searchParams.get("slug") || ""), [searchParams]);
   const hasRequestedSlug = requestedSlug.length > 0;
@@ -303,6 +304,14 @@ export default function PortfolioPage() {
     }
   };
 
+  const handleEditPortfolio = () => {
+    if (!data?.id) {
+      alert("수정할 명함 정보를 찾을 수 없습니다.");
+      return;
+    }
+    router.push(`/create?portfolioId=${data.id}&mode=edit`);
+  };
+
   const canViewStats = Boolean(getAccessToken());
 
   return (
@@ -335,7 +344,11 @@ export default function PortfolioPage() {
 
         <div className={styles.actionGroup}>
           <button className={styles.actionBtn}>명함 미리보기</button>
-          {data?.owner && <button className={styles.actionBtn}>항목 수정</button>}
+          {data?.owner && (
+            <button className={styles.actionBtn} onClick={handleEditPortfolio}>
+              항목 수정
+            </button>
+          )}
           <button className={styles.actionBtn} onClick={handleCopyLink}>
             링크 복사
           </button>
