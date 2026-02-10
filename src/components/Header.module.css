@@ -1,9 +1,23 @@
 .header {
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #d9d9d9;
+  padding: 0 0 12px;
+  position: relative;
+  font-family: "Space Grotesk", "Noto Sans KR", sans-serif;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100vw;
+  transform: translateX(-50%);
+  border-bottom: 1px solid #dfe4f0;
+  pointer-events: none;
 }
 
 .left {
@@ -21,7 +35,7 @@
 .brand {
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: #111;
+  color: #1a1f2b;
 }
 
 .brandLink {
@@ -40,14 +54,14 @@
 
 .navLink {
   font-size: 13px;
-  color: #111;
+  color: #1a1f2b;
   text-decoration: none;
   padding-bottom: 2px;
   border-bottom: 1px solid transparent;
 }
 
 .navLink:hover {
-  border-bottom-color: #111;
+  border-bottom-color: #1a1f2b;
 }
 
 .profileContainer {
@@ -83,7 +97,7 @@
 .dropdownItem {
   padding: 10px 12px;
   font-size: 12px;
-  color: #111;
+  color: #1a1f2b;
   text-decoration: none;
   text-align: left;
   background: none;
@@ -98,4 +112,10 @@
 
 .dropdownItem:first-child {
   border-bottom: 1px solid #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 0 10px;
+  }
 }

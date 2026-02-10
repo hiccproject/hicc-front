@@ -525,9 +525,10 @@ export default function CreatePage() {
 
   return (
     <div className={`${styles.bg} ${isEditMode ? styles.bgEdit : ""}`}>
-      <main className={`${styles.shell} ${isEditMode ? styles.shellEdit : ""}`}>
+      <div className={styles.headerWrap}>
         <Header />
-
+      </div>
+      <main className={`${styles.shell} ${isEditMode ? styles.shellEdit : ""}`}>
         <section className={`${styles.body} ${isEditMode ? styles.bodySingle : ""}`}>
           {!isEditMode && <aside className={styles.stepper}>
             <div className={styles.stepLine} />

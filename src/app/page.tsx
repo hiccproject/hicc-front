@@ -28,8 +28,10 @@ export default function HomePage() {
 
   return (
     <div className={styles.bg}>
-      <main className={styles.shell}>
+      <div className={styles.headerWrap}>
         <Header />
+      </div>
+      <main className={styles.shell}>
         <section className={styles.hero}>
           <div className={styles.heroLeft}>
             <h1 className={styles.title}>One Page Me</h1>

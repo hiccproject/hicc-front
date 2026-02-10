@@ -1,19 +1,14 @@
 /* ... 기존 상단 스타일 (bg, shell, body, pageTitle, form, row, label) 유지 ... */
 .bg {
   min-height: 100vh;
-  background: #6e6e6e;
-  padding: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  background: linear-gradient(135deg, #f8f9fb 0%, #f3f6fb 45%, #eef2f8 100%);
+  color: #1a1f2b;
 }
 .shell {
   width: 100%;
-  max-width: 1200px; 
-  background: #ffffff;
-  padding: 28px; /* 모바일 고려하여 패딩 조정 가능 */
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
-  margin: 0 auto; /* 중앙 정렬 */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 24px 80px;
 }
 .body {
   padding-top: 42px;
@@ -195,7 +190,7 @@
 
 @media (max-width: 768px) {
   .shell {
-    padding: 20px;
+    padding: 24px 16px 60px;
   }
 
   .row {

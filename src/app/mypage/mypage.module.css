@@ -1,19 +1,20 @@
 /* 전체 배경: 기존 프로젝트의 회색 톤 유지 */
 .bg {
   min-height: 100vh;
-  background: #6e6e6e;
-  padding: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  background: linear-gradient(135deg, #f8f9fb 0%, #f3f6fb 45%, #eef2f8 100%);
+  color: #1a1f2b;
+}
+
+.headerWrap {
+  padding: 18px 24px 0;
 }
 
 /* 중앙 흰색 컨테이너 */
 .shell {
-  width: min(1200px, 100%);
-  background: #ffffff;
-  padding: 28px 28px 60px;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 24px 80px;
 }
 
 /* 메인 레이아웃: 좌측 프로필 / 우측 설정 정보 */
@@ -253,6 +254,12 @@
   }
 
   .shell {
-    padding: 20px 18px 40px;
+    padding: 24px 16px 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  .headerWrap {
+    padding: 16px 16px 0;
   }
 }

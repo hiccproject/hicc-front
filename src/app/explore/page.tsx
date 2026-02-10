@@ -186,7 +186,9 @@ export default function ExplorePage() {
 
   return (
     <div className={styles.page}>
-      <Header />
+      <div className={styles.headerWrap}>
+        <Header />
+      </div>
       <main className={styles.container}>
         <section className={styles.hero} />
 

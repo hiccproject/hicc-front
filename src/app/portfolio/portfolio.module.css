@@ -2,17 +2,21 @@
 
 .fullScreenContainer {
   min-height: 100vh;
-  background: #ffffff;
+  background: linear-gradient(135deg, #f8f9fb 0%, #f3f6fb 45%, #eef2f8 100%);
   display: flex;
   flex-direction: column;
-  color: #111111;
+  color: #1a1f2b;
 }
 
 .headerContainer {
   width: 100%;
-  max-width: 1160px;
-  margin: 20px auto 0;
-  padding: 0 8px;
+  padding: 18px 24px 0;
+}
+
+@media (max-width: 768px) {
+  .headerContainer {
+    padding: 16px 16px 0;
+  }
 }
 
 .toolbar {
