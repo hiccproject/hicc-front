@@ -21,6 +21,7 @@ export interface MockPortfolioDetail {
   totalViewCount: string | null;
   todayViewCount: string | null;
   owner: boolean;
+  status: "DRAFT" | "PUBLISHED";
 }
 
 export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
@@ -39,6 +40,7 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
     totalViewCount: "150",
     todayViewCount: "5",
     owner: false,
+    status: "PUBLISHED",
     projects: [
       {
         projectName: "E-commerce 앱 리디자인",
@@ -62,6 +64,7 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
     totalViewCount: "320",
     todayViewCount: "12",
     owner: false,
+    status: "PUBLISHED",
     projects: [
       {
         projectName: "대용량 트래픽 처리 시스템",
@@ -85,6 +88,7 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
     totalViewCount: "85",
     todayViewCount: "2",
     owner: false,
+    status: "PUBLISHED",
     projects: [],
   },
   {
@@ -102,6 +106,7 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
     totalViewCount: "210",
     todayViewCount: "8",
     owner: false,
+    status: "PUBLISHED",
     projects: [
       {
         projectName: "건강 관리 iOS 앱",
@@ -124,6 +129,7 @@ export const MOCK_PORTFOLIOS: MockPortfolioDetail[] = [
     totalViewCount: "110",
     todayViewCount: "4",
     owner: false,
+    status: "PUBLISHED",
     projects: [
       {
         projectName: "AWS 인프라 자동화",

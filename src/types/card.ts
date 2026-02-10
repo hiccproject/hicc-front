@@ -14,6 +14,8 @@ export type Card = {
   intro?: string;
   profileImage?: string;
   projects?: Project[];
+  status?: "DRAFT" | "PUBLISHED";
+  isPublic?: boolean;
 };
 
 export interface Link {

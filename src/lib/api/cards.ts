@@ -8,6 +8,12 @@ export type HomeCardsResponse = {
   cards: Card[];
 };
 
+function isPublicCard(card: Card) {
+  if (card.status && card.status !== "PUBLISHED") return false;
+  if (card.isPublic === false) return false;
+  return true;
+}
+
 // API 응답 타입 정의 (내 명함 조회용)
 type PortfolioItem = {
   id: number;
@@ -133,10 +139,12 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
     intro: portfolio.summaryIntro || "자기소개가 없습니다.",
     profileImage: portfolio.profileImg || undefined,
     projects: portfolio.projects, // 프로젝트 정보 포함
+    status: portfolio.status,
   }));
 
   // 3. 랜덤 셔플 및 개수 제한
   const shuffled = [...mockCards]
+    .filter(isPublicCard)
     .sort(() => Math.random() - 0.5)
     .slice(0, limit);
 

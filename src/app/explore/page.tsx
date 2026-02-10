@@ -18,6 +18,8 @@ type PortfolioListItem = {
   subCategory: string | null;
   tags: string[];
   updatedAt: string;
+  status?: "DRAFT" | "PUBLISHED";
+  isPublic?: boolean;
 };
 
 type PortfolioListResponse = {
@@ -59,6 +61,13 @@ function formatUpdatedDate(value: string) {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(
     date.getDate()
   ).padStart(2, "0")}`;
+}
+
+function isPublicListItem(item: PortfolioListItem) {
+  if (item.status && item.status !== "PUBLISHED") return false;
+  if (item.isPublic === false) return false;
+  if (!item.slug) return false;
+  return true;
 }
 
 export default function ExplorePage() {
@@ -111,7 +120,7 @@ export default function ExplorePage() {
         }
 
         const data = (await res.json()) as PortfolioListResponse;
-        const nextItems = data?.content ?? [];
+        const nextItems = (data?.content ?? []).filter(isPublicListItem);
         setItems((prev) => (replace ? nextItems : [...prev, ...nextItems]));
         setHasNext(Boolean(data?.hasNext));
       } catch (fetchError) {
