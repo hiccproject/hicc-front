@@ -10,6 +10,12 @@ import { getPortfolioDetail, getPortfolioShareLink, savePortfolioStep, Portfolio
 import { uploadImage } from "@/lib/api/uploads";
 import { getStoredProfile } from "@/lib/auth/profile";
 import { getPortfolioProfileImage, setPortfolioProfileImage } from "@/lib/storage/portfolio-images";
+import {
+  getPortfolioProjectImages,
+  removePortfolioProjectImage,
+  setPortfolioProjectImage,
+  setPortfolioProjectImages,
+} from "@/lib/storage/project-images";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -152,6 +158,17 @@ export default function CreatePage() {
         const detail = response?.data;
         if (!detail) return;
 
+        const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
+        const mergedProjects =
+          detail.projects && detail.projects.length > 0
+            ? detail.projects.map((project, index) => ({
+                projectName: project.projectName || "",
+                projectSummary: project.projectSummary || "",
+                projectLink: project.projectLink || "",
+                projectImg: project.projectImg || localProjectImages[index] || "",
+              }))
+            : null;
+
         setFormData((prev) => ({
           ...prev,
           category: detail.category || prev.category,
@@ -160,15 +177,7 @@ export default function CreatePage() {
           email: detail.email || "",
           phone: detail.phone || "",
           location: detail.location || "",
-          projects:
-            detail.projects && detail.projects.length > 0
-              ? detail.projects.map((project) => ({
-                  projectName: project.projectName || "",
-                  projectSummary: project.projectSummary || "",
-                  projectLink: project.projectLink || "",
-                  projectImg: project.projectImg || "",
-                }))
-              : prev.projects,
+          projects: mergedProjects ?? prev.projects,
           summaryIntro: detail.summaryIntro || "",
           tags: detail.tags || [],
           layoutType: detail.layoutType || prev.layoutType,
@@ -179,6 +188,11 @@ export default function CreatePage() {
         if (resolvedProfileImg) {
           setProfilePreview(resolvedProfileImg);
           setFormData((prev) => ({ ...prev, profileImg: resolvedProfileImg }));
+        }
+
+        if (portfolioId && mergedProjects) {
+          const nextImages = mergedProjects.map((project) => project.projectImg || "");
+          setPortfolioProjectImages(portfolioId, nextImages);
         }
       } catch (error) {
         console.error(error);
@@ -290,6 +304,9 @@ export default function CreatePage() {
       if (prev.length === 1) return prev;
       return prev.filter((_, i) => i !== index);
     });
+    if (portfolioId) {
+      removePortfolioProjectImage(portfolioId, index);
+    }
   };
 
   const getProjectLinks = (projectLink?: string) => {
@@ -349,6 +366,9 @@ export default function CreatePage() {
         next[index] = uploadedUrl;
         return next;
       });
+      if (portfolioId) {
+        setPortfolioProjectImage(portfolioId, index, uploadedUrl);
+      }
     } catch (error) {
       console.error(error);
       handleProjectChange(index, "projectImg", "");
@@ -390,9 +410,11 @@ export default function CreatePage() {
           location: formData.location?.trim() || null,
         };
       } else if (step === 3) {
+        const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
         body = {
-          projects: formData.projects.map((project) => ({
+          projects: formData.projects.map((project, index) => ({
             ...project,
+            projectImg: project.projectImg || localProjectImages[index] || "",
             projectLink: getProjectLinks(project.projectLink)
               .map((link) => link.trim())
               .filter(Boolean)

@@ -9,6 +9,7 @@ import ListView from "./components/ListView";
 import CardView from "./components/CardView";
 import GridView from "./components/GridView";
 import { getAccessToken } from "@/lib/auth/tokens";
+import { getPortfolioProjectImages } from "@/lib/storage/project-images";
 
 type LayoutType = "CARD" | "LIST" | "GRID";
 
@@ -95,13 +96,15 @@ function getApiMessage<T>(json: PortfolioApiResponse<T> | null, status: number):
 }
 
 function normalizePortfolio(data: PortfolioDetailApi): PortfolioDetail {
+  const localProjectImages = typeof window !== "undefined" ? getPortfolioProjectImages(data.id) : [];
+
   return {
     ...data,
     tags: Array.isArray(data.tags) ? data.tags : [],
-    projects: (data.projects ?? []).map((project) => ({
+    projects: (data.projects ?? []).map((project, index) => ({
       title: project.projectName?.trim() || "프로젝트",
       projectSummary: project.projectSummary?.trim() || "",
-      image: project.projectImg || null,
+      image: project.projectImg || localProjectImages[index] || null,
       links: project.projectLink?.trim()
         ? [{ title: "project-link", url: project.projectLink.trim() }]
         : [],
