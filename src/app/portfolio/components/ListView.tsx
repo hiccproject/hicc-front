@@ -46,15 +46,27 @@ export default function ListView({ data, isOwner = false }: ListViewProps) {
           </div>
         </div>
 
+        {/* [수정 부분] 조회수 항목 디자인 통일 및 아래로 간격 추가 */}
         {isOwner && (
-          <div className={styles.sideStatsCard}>
-            <div className={styles.statMetaRow}>
-              <span>일일 조회수 :</span>
-              <span>전체 조회수 :</span>
-            </div>
-            <div className={styles.statNumRow}>
-              <span className={styles.statToday}>{data.todayViewCount ?? 0}회</span>
-              <span className={styles.statTotal}>{data.totalViewCount ?? 0}회</span>
+          <div 
+            className={styles.cardChartPanel} 
+            style={{ marginTop: "30px", background: "#ffffff" }}
+          >
+            <div className={styles.cardStatsRow}>
+              <div className={styles.cardStatsItem}>
+                <span className={styles.cardStatsLabel}>일일 조회수 :</span>
+                <strong className={styles.cardStatsValue}>
+                  {data.todayViewCount ?? 0}
+                  <span className={styles.cardStatsUnit}>회</span>
+                </strong>
+              </div>
+              <div className={styles.cardStatsItem}>
+                <span className={styles.cardStatsLabel}>전체 조회수 :</span>
+                <strong className={styles.cardStatsValue}>
+                  {data.totalViewCount ?? 0}
+                  <span className={styles.cardStatsUnit}>회</span>
+                </strong>
+              </div>
             </div>
           </div>
         )}

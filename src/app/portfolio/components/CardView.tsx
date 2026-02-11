@@ -130,18 +130,20 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
   const renderStatsSlide = () => {
     return (
       <>
-        <div className={styles.cardTopRow}>
+        <div className={styles.cardProfileGroup}>
           <img
             src={data.profileImg || DEFAULT_PROFILE_IMG}
             alt={name}
-            className={styles.cardAvatarCircle}
+            className={styles.cardAvatarLarge} 
             onError={(event) => {
               (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
             }}
           />
-          <div className={styles.cardIdentity}>
-            <h2 className={styles.cardName}>{name}</h2>
-            <span className={styles.cardRolePill}>{role}</span>
+          <div className={styles.cardIdentityColumn}>
+            <div className={styles.cardNameRow}>
+               <h2 className={styles.cardName}>{name}</h2>
+               <span className={styles.cardRolePill}>{role}</span>
+            </div>
           </div>
         </div>
 

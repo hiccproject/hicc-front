@@ -41,15 +41,24 @@ export default function GridView({ data, isOwner = false }: GridViewProps) {
           </div>
         </div>
 
+        {/* [수정 부분] 카드뷰와 동일한 스타일 적용 */}
         {isOwner && (
           <div className={styles.gridStatsCard}>
-            <div className={styles.statMetaRow}>
-              <span>일일 조회수 :</span>
-              <span>전체 조회수 :</span>
-            </div>
-            <div className={styles.statNumRow}>
-              <span className={styles.statToday}>{data.todayViewCount ?? 0}회</span>
-              <span className={styles.statTotal}>{data.totalViewCount ?? 0}회</span>
+            <div className={styles.cardStatsRow} style={{ marginTop: 0 }}>
+              <div className={styles.cardStatsItem}>
+                <span className={styles.cardStatsLabel}>일일 조회수 :</span>
+                <strong className={styles.cardStatsValue}>
+                  {data.todayViewCount ?? 0}
+                  <span className={styles.cardStatsUnit}>회</span>
+                </strong>
+              </div>
+              <div className={styles.cardStatsItem}>
+                <span className={styles.cardStatsLabel}>전체 조회수 :</span>
+                <strong className={styles.cardStatsValue}>
+                  {data.totalViewCount ?? 0}
+                  <span className={styles.cardStatsUnit}>회</span>
+                </strong>
+              </div>
             </div>
           </div>
         )}
