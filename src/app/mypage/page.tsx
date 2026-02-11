@@ -164,6 +164,12 @@ export default function MyPage() {
         setStoredNameForEmail(emailId, tempValue);
       }
       setStoredProfile({ name: tempValue, email: emailId, password });
+    } else if (editingField === "email") {
+      setEmailId(tempValue);
+      if (name) {
+        setStoredNameForEmail(tempValue, name);
+      }
+      setStoredProfile({ name, email: tempValue, password });
     }
 
     setEditingField(null);
@@ -264,11 +270,30 @@ export default function MyPage() {
                 )}
               </div>
 
+              {/* 이메일 수정 */}
               <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>
-                  <span className={styles.labelName}>이메일</span>
-                  <span className={styles.labelValue}>{emailId}</span>
-                </div>
+                {editingField === "email" ? (
+                  <form className={styles.editBlock} onSubmit={handleSave}>
+                    <input 
+                      className={styles.inputBar} 
+                      value={tempValue} 
+                      onChange={(e) => setTempValue(e.target.value)} 
+                      autoFocus
+                    />
+                    <div className={styles.editActions}>
+                      <button type="submit" className={styles.saveBtn}>저장</button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.labelName}>이메일</span>
+                      <span className={styles.labelValue}>{emailId}</span>
+                    </div>
+                    <button className={styles.editBtn} onClick={() => startEdit("email", emailId)}>수정</button>
+                  </>
+                )}
               </div>
 
               {/* 비밀번호 수정 */}

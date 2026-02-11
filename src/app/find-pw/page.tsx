@@ -28,14 +28,17 @@ export default function FindPasswordPage() {
   }, [email]);
 
   const passwordMatch = newPassword.length > 0 && newPassword === newPassword2;
-  const canSubmit = isMailVerified && newPassword.length >= 8 && passwordMatch;
+  const passwordPolicy = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$/;
+  const isPasswordValid = passwordPolicy.test(newPassword);
+  const canSubmit = isMailVerified && isPasswordValid && passwordMatch;
 
   const helperText = useMemo(() => {
     if (!newPassword.length && !newPassword2.length) return "";
-    if (newPassword.length < 8) return "비밀번호는 8자 이상이어야 합니다.";
+    if (newPassword.length < 8 || newPassword.length > 20) return "비밀번호는 8~20자여야 합니다.";
+    if (!isPasswordValid) return "비밀번호는 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.";
     if (!passwordMatch) return "비밀번호가 일치하지 않습니다.";
     return "";
-  }, [newPassword, newPassword2, passwordMatch]);
+  }, [newPassword, newPassword2, passwordMatch, isPasswordValid]);
 
   async function onSendMail() {
     if (!email || !email.includes("@")) {
@@ -158,7 +161,7 @@ export default function FindPasswordPage() {
               <input
                 type="password"
                 className={styles.input}
-                placeholder="새 비밀번호 (8자 이상)"
+                placeholder="새 비밀번호 (비밀번호는 8~20자이며, 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />

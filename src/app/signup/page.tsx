@@ -232,7 +232,7 @@ export default function SignupPage() {
               <input
                 className={styles.input}
                 type="password"
-                placeholder="비밀번호 (8자 이상)"
+                placeholder="비밀번호 (비밀번호는 8~20자이며, 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
