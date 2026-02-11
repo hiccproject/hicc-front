@@ -339,8 +339,6 @@ export default function PortfolioPage() {
         )}
 
         <div className={styles.actionGroup}>
-          {/* ✅ 본인 포트폴리오에서만 미리보기 노출 */}
-          {isOwner && <button className={styles.actionBtn}>명함 미리보기</button>}
           {isOwner && (
             <button className={styles.actionBtn} onClick={handleEditPortfolio}>
               항목 수정
