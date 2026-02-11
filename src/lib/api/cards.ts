@@ -3,19 +3,12 @@ import { apiFetch } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/auth/tokens";
 import { getStoredProfile } from "@/lib/auth/profile";
 import { buildApiUrl } from "@/lib/api/config";
-import { MOCK_PORTFOLIOS } from "@/mock/portfolios"; // [NEW] 상세 포트폴리오 Mock Import
 
 // 랜덤 명함 조회 응답 타입
 export type HomeCardsResponse = {
   myCard: Card | null;
   cards: Card[];
 };
-
-function isPublicCard(card: Card) {
-  if (card.status && card.status !== "PUBLISHED") return false;
-  if (card.isPublic === false) return false;
-  return true;
-}
 
 // API 응답 타입 정의 (내 명함 조회용)
 type PortfolioItem = {
@@ -98,7 +91,17 @@ function isPublicListItem(item: PublicPortfolioListItem) {
   return true;
 }
 
+function pickRandom<T>(list: T[]) {
+  if (list.length === 0) return null;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function extractSlug(value?: string | null) {
+  return value?.trim().replace(/\/+$/, "").split("/").filter(Boolean).pop() || "";
+}
+
 async function fetchPublicCards(limit: number): Promise<Card[]> {
+  if (limit <= 0) return [];
   try {
     const params = new URLSearchParams();
     params.set("sort", "LATEST");
@@ -248,19 +251,24 @@ export async function fetchMyCard(): Promise<Card | null> {
 
     const sortedList = sortByUpdatedDesc(list);
     const publishedList = sortedList.filter((item) => item.status === "PUBLISHED");
-    const completedDrafts = sortedList.filter(
-      (item) => item.status === "DRAFT" && (item.lastStep ?? 0) >= 5
-    );
-    const inProgressDrafts = sortedList.filter(
-      (item) => item.status === "DRAFT" && (item.lastStep ?? 0) < 5
-    );
+    const completedDrafts = sortedList.filter((item) => item.status === "DRAFT" && (item.lastStep ?? 0) >= 5);
+    const inProgressDrafts = sortedList.filter((item) => item.status === "DRAFT" && (item.lastStep ?? 0) < 5);
 
     const profile = getStoredProfile();
-    const storedName = profile?.name?.trim();
-    const published = publishedList[0];
+    const storedName = profile?.name?.trim() || "회원";
+
+    const published = pickRandom(publishedList);
     if (published) {
       const { name, role } = normalizeTitleParts(published.title);
       const detail = await fetchPortfolioDetailById(published.id);
+      let linkHref = "/portfolio";
+      try {
+        const share = await getPortfolioShareLink(published.id);
+        const slug = extractSlug(share?.data ?? "");
+        if (slug) linkHref = `/portfolio?slug=${encodeURIComponent(slug)}`;
+      } catch {
+        linkHref = "/portfolio";
+      }
       const username = detail?.username?.trim() || published.username?.trim() || storedName || name;
       const intro = detail?.summaryIntro?.trim() || "";
       const tags = Array.isArray(detail?.tags) ? detail?.tags : [];
@@ -278,14 +286,14 @@ export async function fetchMyCard(): Promise<Card | null> {
         location: detail?.location || null,
         status: published.status,
         isMine: true,
-        linkHref: "/portfolio",
+        linkHref,
         tags,
         category: categoryLabel || published.category || null,
         subCategory,
       };
     }
 
-    const privateCard = completedDrafts[0];
+    const privateCard = pickRandom(completedDrafts);
     if (privateCard) {
       const { name, role } = normalizeTitleParts(privateCard.title);
       const detail = await fetchPortfolioDetailById(privateCard.id);
@@ -315,34 +323,51 @@ export async function fetchMyCard(): Promise<Card | null> {
     }
 
     if (inProgressDrafts.length > 0) {
-      const singleDraft = inProgressDrafts.length === 1 ? inProgressDrafts[0] : null;
-      const titleParts = singleDraft ? normalizeTitleParts(singleDraft.title) : { name: "작성 중인 명함", role: "" };
-      const detail = singleDraft ? await fetchPortfolioDetailById(singleDraft.id) : null;
-      const username =
-        detail?.username?.trim() || singleDraft?.username?.trim() || storedName || titleParts.name;
-      const categoryLabel = getCategoryLabel(detail?.category || singleDraft?.category);
-      const subCategory = detail?.subCategory || singleDraft?.subCategory || titleParts.role;
-      const linkHref = singleDraft
-        ? `/create?portfolioId=${singleDraft.id}&step=${singleDraft.lastStep || 1}`
-        : "/cards";
+      if (inProgressDrafts.length === 1) {
+        const singleDraft = inProgressDrafts[0];
+        const titleParts = normalizeTitleParts(singleDraft.title);
+        const detail = await fetchPortfolioDetailById(singleDraft.id);
+        const username = detail?.username?.trim() || singleDraft?.username?.trim() || storedName || titleParts.name;
+        const categoryLabel = getCategoryLabel(detail?.category || singleDraft?.category);
+        const subCategory = detail?.subCategory || singleDraft?.subCategory || titleParts.role;
+        return {
+          id: singleDraft.id.toString(),
+          name: username,
+          username,
+          role: categoryLabel,
+          intro: "이어서 작성하기",
+          profileImage: detail?.profileImg || singleDraft.profileImg || undefined,
+          status: "DRAFT",
+          isMine: true,
+          linkHref: `/create?portfolioId=${singleDraft.id}&step=${singleDraft.lastStep || 1}`,
+          category: categoryLabel || null,
+          subCategory,
+          progressMode: "single",
+        };
+      }
 
       return {
-        id: singleDraft ? singleDraft.id.toString() : "in-progress",
-        name: username,
-        username,
-        role: categoryLabel,
+        id: "in-progress",
+        name: storedName,
+        username: storedName,
         intro: "이어서 작성하기",
-        profileImage: singleDraft?.profileImg || undefined,
         status: "DRAFT",
         isMine: true,
-        linkHref,
-        category: categoryLabel || null,
-        subCategory: singleDraft ? subCategory : null,
-        progressMode: singleDraft ? "single" : "multiple",
+        linkHref: "/cards",
+        progressMode: "multiple",
       };
     }
 
-    return null;
+    return {
+      id: "empty",
+      name: storedName,
+      username: storedName,
+      intro: "명함 생성하기",
+      status: "DRAFT",
+      isMine: true,
+      linkHref: "/create",
+      progressMode: "multiple",
+    };
   } catch (e) {
     console.error("Failed to fetch my card:", e);
     return null;
@@ -357,30 +382,11 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
   const myCard = await fetchMyCard();
   const otherLimit = myCard ? Math.max(limit - 1, 0) : limit;
 
-  // 2. 공개 명함 + Mock 데이터를 섞어 홈 카드로 노출
+  // 2. 공개 명함을 랜덤으로 노출
   const publicCards = await fetchPublicCards(otherLimit);
 
-  // 3. 상세 포트폴리오 Mock 데이터를 Card 타입으로 변환 (배경 카드용)
-  const mockCards: Card[] = MOCK_PORTFOLIOS.map((portfolio) => ({
-    id: portfolio.id.toString(),
-    name: portfolio.name,
-    username: portfolio.name,
-    role: portfolio.category,
-    intro: portfolio.summaryIntro || "자기소개가 없습니다.",
-    profileImage: portfolio.profileImg || undefined,
-    projects: portfolio.projects, // 프로젝트 정보 포함
-    status: portfolio.status,
-    category: portfolio.category,
-    subCategory: portfolio.subCategory,
-    email: portfolio.email,
-    phone: portfolio.phone,
-    location: portfolio.location,
-  }));
-
-  const mixedPool = [...publicCards, ...mockCards.filter(isPublicCard)];
-
-  // 4. 랜덤 셔플 및 개수 제한
-  const shuffled = mixedPool.sort(() => Math.random() - 0.5).slice(0, otherLimit);
+  // 3. 랜덤 셔플 및 개수 제한
+  const shuffled = publicCards.sort(() => Math.random() - 0.5).slice(0, otherLimit);
 
   return {
     myCard,
