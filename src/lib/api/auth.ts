@@ -110,8 +110,7 @@ export async function changeMemberPassword(payload: {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    const isNotFound =
-      message.includes("API Error 404") || message.includes("C007");
+    const isNotFound = message.includes("API Error 404") || message.includes("C007");
     if (!isNotFound) throw error;
   }
 
@@ -154,6 +153,7 @@ export function requestGoogleLogin() {
 }
 
 export type GoogleConsentRequest = {
+  name: string; // ✅ 추가
   personalInfoAgreement: boolean;
   serviceTermsAgreement: boolean;
 };
@@ -163,9 +163,6 @@ export type GoogleConsentResponse = {
   message: string;
 };
 
-/**
- * 신규 유저 약관 동의 (consent)
- */
 export async function consentGoogleSignup(
   payload: GoogleConsentRequest
 ): Promise<GoogleConsentResponse> {
@@ -175,8 +172,3 @@ export async function consentGoogleSignup(
     body: JSON.stringify(payload),
   });
 }
-
-/**
- * (호환용) 기존 이름을 쓰는 코드가 남아있을 수 있어서 alias 유지
- */
-export const agreeGoogleSignup = consentGoogleSignup;

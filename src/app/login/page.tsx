@@ -86,11 +86,12 @@ export default function LoginPage() {
               {isSubmitting ? "로그인 중..." : "로그인"}
             </button>
 
+            {/* [수정] 회원가입과 비밀번호 재설정 위치 변경 */}
             <div className={styles.findLinks}>
-              <Link href="/find-pw">비밀번호 재설정</Link>
               <Link href="/signup" className={styles.signupButton}>
                 회원가입
               </Link>
+              <Link href="/find-pw">비밀번호 재설정</Link>
             </div>
 
             <div className={styles.socialDivider}>

@@ -9,11 +9,6 @@ import Modal from "@/components/Modal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { consentGoogleSignup } from "@/lib/api/auth";
 import { setTokens } from "@/lib/auth/tokens";
-import {
-  getStoredProfile,
-  setStoredNameForEmail,
-  setStoredProfile,
-} from "@/lib/auth/profile";
 
 export default function TermsPage() {
   const router = useRouter();
@@ -34,43 +29,20 @@ export default function TermsPage() {
 
     setIsSubmitting(true);
     try {
-      /**
-       * ✅ 1) 이름 저장 로직 (MyPage 방식 그대로)
-       * - 서버 호출 X
-       * - profile store/localStorage만 업데이트
-       */
-      const profile = getStoredProfile();
-      const email = profile?.email ?? "";
-
-      if (email) {
-        setStoredNameForEmail(email, name.trim());
-      }
-
-      setStoredProfile({
-        name: name.trim(),
-        email: profile?.email ?? "",
-        password: profile?.password ?? "",
-      });
-
-      /**
-       * ✅ 2) 약관 동의 (agree -> consent로 변경)
-       */
-      const res = await consentGoogleSignup({
-        personalInfoAgreement,
-        serviceTermsAgreement,
-      });
-
-      /**
-       * ✅ 3) 임시 토큰 저장 (기존 로직 유지)
-       */
       const tempTokens = (window as any).__tempTokens;
-      if (tempTokens) {
+      if (tempTokens?.accessToken && tempTokens?.refreshToken) {
         setTokens({
           accessToken: tempTokens.accessToken,
           refreshToken: tempTokens.refreshToken,
         });
         delete (window as any).__tempTokens;
       }
+
+      const res = await consentGoogleSignup({
+        personalInfoAgreement,
+        serviceTermsAgreement,
+        name: name.trim(),
+      });
 
       alert(res.message || "회원가입이 완료되었습니다.");
       window.dispatchEvent(new Event("auth-changed"));
@@ -94,9 +66,7 @@ export default function TermsPage() {
 
           <form className={styles.form} onSubmit={onSubmit}>
             <div className={styles.nameRow}>
-              <label htmlFor="name" className={styles.nameLabel}>
-                이름
-              </label>
+              <label htmlFor="name" className={styles.nameLabel}>이름</label>
               <input
                 id="name"
                 type="text"
@@ -117,11 +87,7 @@ export default function TermsPage() {
                   />
                   <span>이용 약관(필수)</span>
                 </label>
-                <button
-                  type="button"
-                  className={styles.viewBtn}
-                  onClick={() => setOpenModal("terms")}
-                >
+                <button type="button" className={styles.viewBtn} onClick={() => setOpenModal("terms")}>
                   내용보기
                 </button>
               </div>
@@ -135,17 +101,13 @@ export default function TermsPage() {
                   />
                   <span>개인정보 수집 이용 동의(필수)</span>
                 </label>
-                <button
-                  type="button"
-                  className={styles.viewBtn}
-                  onClick={() => setOpenModal("privacy")}
-                >
+                <button type="button" className={styles.viewBtn} onClick={() => setOpenModal("privacy")}>
                   내용보기
                 </button>
               </div>
 
               {!canSubmit && (
-                <div className={styles.warn}>이름 입력과 필수 약관 동의는 필수입니다.</div>
+                <div className={styles.warn}>이름 입력과 필수 약관 동의가 필요합니다.</div>
               )}
             </div>
 
