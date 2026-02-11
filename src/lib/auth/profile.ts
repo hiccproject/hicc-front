@@ -79,13 +79,3 @@ export function clearStoredProfile() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(PROFILE_KEY);
 }
-
-export function clearStoredNameMap() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(PROFILE_NAME_MAP_KEY);
-}
-
-export function clearStoredProfileImage() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("profileImg");
-}

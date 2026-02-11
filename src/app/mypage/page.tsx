@@ -10,8 +10,6 @@ import { changeMemberPassword, deleteMemberAccount } from "@/lib/api/auth";
 import { uploadImage } from "@/lib/api/uploads";
 import {
   clearStoredProfile,
-  clearStoredNameMap,
-  clearStoredProfileImage,
   getStoredNameForLogin,
   getStoredProfile,
   removeStoredNameForEmail,
@@ -196,15 +194,8 @@ export default function MyPage() {
       }
       clearTokens();
       clearStoredProfile();
-      clearStoredNameMap();
-      clearStoredProfileImage();
-      setName("");
-      setEmailId("");
-      setPassword("");
-      setProfilePreview(DEFAULT_PROFILE_IMG);
-      window.dispatchEvent(new Event("auth-changed"));
       alert(message);
-      router.replace(redirectUrl);
+      router.push(redirectUrl);
     } catch (error) {
       alert(error instanceof Error ? error.message : "계정 삭제에 실패했습니다.");
     } finally {
