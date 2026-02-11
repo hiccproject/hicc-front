@@ -412,6 +412,32 @@ export default function CreatePage() {
       alert("프로젝트 이미지 업로드에 실패했습니다.");
     }
   };
+
+  const buildProjectPayloads = () => {
+    const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
+
+    return formData.projects
+      .map((project, index) => {
+        const normalizedLinks = getProjectLinks(project.projectLink)
+          .map((link) => link.trim())
+          .filter(Boolean)
+          .join("\n");
+
+        return {
+          ...project,
+          projectImg: project.projectImg || localProjectImages[index] || "",
+          projectLink: normalizedLinks,
+        };
+      })
+      .filter((project) => {
+        return Boolean(
+          project.projectName?.trim() ||
+          project.projectSummary?.trim() ||
+          project.projectLink?.trim() ||
+          project.projectImg?.trim()
+        );
+      });
+  };
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
     if (isSaving) return;
@@ -447,16 +473,8 @@ export default function CreatePage() {
           location: formData.location?.trim() || null,
         };
       } else if (step === 3) {
-        const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
         body = {
-          projects: formData.projects.map((project, index) => ({
-            ...project,
-            projectImg: project.projectImg || localProjectImages[index] || "",
-            projectLink: getProjectLinks(project.projectLink)
-              .map((link) => link.trim())
-              .filter(Boolean)
-              .join("\n"),
-          })),
+          projects: buildProjectPayloads(),
         };
       } else if (step === 4) {
         body = {
@@ -498,13 +516,7 @@ export default function CreatePage() {
             location: formData.location?.trim() || null,
           }, nextPortfolioId);
           await savePortfolioStep(3, {
-            projects: formData.projects.map((project) => ({
-              ...project,
-              projectLink: getProjectLinks(project.projectLink)
-                .map((link) => link.trim())
-                .filter(Boolean)
-                .join("\n"),
-            })),
+            projects: buildProjectPayloads(),
           }, nextPortfolioId);
           await savePortfolioStep(4, {
             summaryIntro: formData.summaryIntro,
