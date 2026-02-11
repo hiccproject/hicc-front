@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
+import "./globals.css";
 import TokenQueryHandler from "@/components/TokenQueryHandler";
 
 export const metadata: Metadata = {
