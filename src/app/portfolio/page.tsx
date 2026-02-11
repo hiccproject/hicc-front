@@ -13,6 +13,7 @@ import { savePortfolioLayoutType, type LayoutType } from "@/lib/api/portfolio-la
 import { buildApiUrl } from "@/lib/api/config";
 import { apiFetch } from "@/lib/api/client";
 
+// ... (이전 타입 정의들은 그대로 유지) ...
 type PortfolioApiResponse<T> = {
   code: string;
   message: string;
@@ -109,8 +110,6 @@ async function fetchPortfolioBySlug(slug: string, auth: boolean): Promise<Portfo
   const url = buildApiUrl(`/api/portfolios/${encodeURIComponent(slug)}`);
   const json = await apiFetch<PortfolioApiResponse<PortfolioDetailApi>>(url, {
     method: "GET",
-    // ✅ 공개 포트폴리오는 비로그인(토큰 없음)이어도 조회 가능해야 함
-    //    로그인 했을 때만 owner 판별(=본인 여부) 같은 추가 정보를 받을 수 있음
     auth,
   });
 
@@ -183,12 +182,12 @@ export default function PortfolioPage() {
   const [error, setError] = useState<string | null>(null);
   const [resolvedSlug, setResolvedSlug] = useState("");
 
-  const isOwner = data?.owner === true;
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const isRealOwner = data?.owner === true;
+  const isEditMode = isRealOwner && !isPreviewMode;
   const savedLayout: LayoutType = data?.layoutType ?? "LIST";
-  const hasLayoutChanged = isOwner ? layout !== savedLayout : false;
-
-  // ✅ 타인은 저장된 레이아웃만 보여야 함
-  const effectiveLayout: LayoutType = isOwner ? layout : savedLayout;
+  const hasLayoutChanged = isEditMode ? layout !== savedLayout : false;
+  const effectiveLayout: LayoutType = isEditMode ? layout : savedLayout;
 
   useEffect(() => {
     let isCancelled = false;
@@ -237,10 +236,7 @@ export default function PortfolioPage() {
         if (isCancelled) return;
 
         setData(detail);
-
-        // ✅ 본인에게만: 서버 저장값으로 초기 레이아웃 세팅 (타인도 harmless)
         setLayout(detail.layoutType || "LIST");
-
         setResolvedSlug(slugToUse);
       } catch (e) {
         if (isCancelled) return;
@@ -302,8 +298,7 @@ export default function PortfolioPage() {
       </div>
 
       <div className={styles.toolbar}>
-        {/* ✅ 본인일 때만 레이아웃 선택 + 저장 버튼 */}
-        {isOwner && (
+        {isEditMode && (
           <div className={styles.layoutRow}>
             <div className={styles.layoutSwitcher}>
               <button
@@ -339,13 +334,24 @@ export default function PortfolioPage() {
         )}
 
         <div className={styles.actionGroup}>
-          {/* ✅ 본인 포트폴리오에서만 미리보기 노출 */}
-          {isOwner && <button className={styles.actionBtn}>명함 미리보기</button>}
-          {isOwner && (
+          {isRealOwner && !isPreviewMode && (
+            <button className={styles.actionBtn} onClick={() => setIsPreviewMode(true)}>
+              미리보기
+            </button>
+          )}
+          
+          {isPreviewMode && (
+             <button className={styles.actionBtn} onClick={() => setIsPreviewMode(false)}>
+              미리보기 종료
+            </button>
+          )}
+
+          {isEditMode && (
             <button className={styles.actionBtn} onClick={handleEditPortfolio}>
               항목 수정
             </button>
           )}
+          
           <button className={styles.actionBtn} onClick={handleCopyLink}>
             링크 복사
           </button>
@@ -359,9 +365,6 @@ export default function PortfolioPage() {
             <div className={styles.stateDesc}>
               URL 뒤에 <code className={styles.inlineCode}>?slug=8글자</code> 또는{" "}
               <code className={styles.inlineCode}>?id=포트폴리오ID</code> 형태로 접속해 주세요.
-              <br />
-              예시: <code className={styles.inlineCode}>/portfolio?slug=ab12cd34</code> 또는{" "}
-              <code className={styles.inlineCode}>/portfolio?id=3</code>
             </div>
           </div>
         )}
@@ -382,10 +385,9 @@ export default function PortfolioPage() {
 
         {!loading && !error && data && (
           <>
-            {/* ✅ 조회수는 owner일 때만 */}
-            {effectiveLayout === "CARD" && <CardView data={data} canViewStats={isOwner} />}
-            {effectiveLayout === "LIST" && <ListView data={data} isOwner={data.owner} />}
-            {effectiveLayout === "GRID" && <GridView data={data} isOwner={data.owner} />}
+            {effectiveLayout === "CARD" && <CardView data={data} canViewStats={isEditMode} />}
+            {effectiveLayout === "LIST" && <ListView data={data} isOwner={isEditMode} />}
+            {effectiveLayout === "GRID" && <GridView data={data} isOwner={isEditMode} />}
           </>
         )}
       </div>
