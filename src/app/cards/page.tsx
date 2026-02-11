@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import styles from "./cards.module.css";
 import Header from "@/components/Header";
 import { getAccessToken } from "@/lib/auth/tokens";
-import { deletePortfolio, updatePortfolioStatus } from "@/lib/api/cards";
+import { deletePortfolio, getPortfolioShareLink, updatePortfolioStatus } from "@/lib/api/cards";
 import { getPortfolioProfileImage, removePortfolioProfileImage } from "@/lib/storage/portfolio-images";
 
 // API 응답 데이터 타입 정의
@@ -23,9 +23,41 @@ type PortfolioItem = {
 export default function CardsPage() {
   const router = useRouter();
   const [portfolios, setPortfolios] = useState<PortfolioItem[]>([]);
+  const [shareSlugMap, setShareSlugMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingMap, setUpdatingMap] = useState<Record<number, boolean>>({});
+
+  const extractSlug = (value: string) => {
+    return value.trim().replace(/\/+$/, "").split("/").filter(Boolean).pop() || "";
+  };
+
+  const fetchShareSlugs = async (list: PortfolioItem[]) => {
+    const targets = list.filter((item) => !(item.status === "DRAFT" && (item.lastStep || 0) < 5));
+    if (targets.length === 0) {
+      setShareSlugMap({});
+      return;
+    }
+
+    const entries = await Promise.all(
+      targets.map(async (item) => {
+        try {
+          const shareRes = await getPortfolioShareLink(item.id);
+          const raw = shareRes?.data?.trim() || "";
+          const slug = extractSlug(raw);
+          return [item.id, slug] as const;
+        } catch {
+          return [item.id, ""] as const;
+        }
+      })
+    );
+
+    const nextMap = entries.reduce<Record<number, string>>((acc, [id, slug]) => {
+      if (slug) acc[id] = slug;
+      return acc;
+    }, {});
+    setShareSlugMap(nextMap);
+  };
 
   useEffect(() => {
     async function fetchMyPortfolios() {
@@ -72,6 +104,7 @@ export default function CardsPage() {
         // 만약 { data: [...] } 형태라면 json.data 사용
         const list = Array.isArray(json) ? json : json.data || [];
         setPortfolios(list);
+        await fetchShareSlugs(list);
 
       } catch (err) {
         console.error("명함 목록 조회 에러:", err);

@@ -102,10 +102,7 @@ function normalizePortfolio(data: PortfolioDetailApi): PortfolioDetail {
 
   return {
     ...data,
-
-    // ✅ username null 방어 (원하면 기본값 바꿔도 됨)
     username: (data.username ?? "").trim() || "사용자",
-
     tags: Array.isArray(data.tags) ? data.tags : [],
     projects: (data.projects ?? []).map((project, index) => ({
       title: project.projectName?.trim() || "프로젝트",
@@ -122,6 +119,7 @@ async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
   const res = await fetch(`/api/portfolios/${encodeURIComponent(slug)}`, {
     method: "GET",
     credentials: "include",
+    cache: "no-store",
     headers: {
       Accept: "application/json",
       ...getAuthHeaders(),
@@ -145,12 +143,15 @@ async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
 }
 
 async function fetchShareSlug(portfolioId: number): Promise<string> {
-  const res = await fetch(`/api/portfolios/${portfolioId}/share-link`, {
+  // cache busting
+  const res = await fetch(`/api/portfolios/${portfolioId}/share-link?t=${Date.now()}`, {
     method: "GET",
     credentials: "include",
+    cache: "no-store",
     headers: {
       Accept: "application/json",
       ...getAuthHeaders(),
+      "Cache-Control": "no-cache",
     },
   });
 
@@ -182,6 +183,7 @@ async function fetchMyPortfolios(): Promise<MyPortfolioItem[]> {
   const res = await fetch("/api/portfolios/my", {
     method: "GET",
     credentials: "include",
+    cache: "no-store",
     headers: {
       Accept: "application/json",
       ...getAuthHeaders(),
@@ -220,7 +222,20 @@ function buildPortfolioShareUrl(shareValueOrSlug: string): string {
 export default function PortfolioPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedSlug = useMemo(() => normalizeSlug(searchParams.get("slug") || ""), [searchParams]);
+
+  // ✅ slug 우선
+  const requestedSlug = useMemo(
+    () => normalizeSlug(searchParams.get("slug") || ""),
+    [searchParams]
+  );
+
+  // ✅ id도 지원 (cards에서 /portfolio?id=... 로 보내는 케이스 대응)
+  const requestedId = useMemo(() => {
+    const raw = searchParams.get("id") || searchParams.get("portfolioId") || "";
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [searchParams]);
+
   const hasRequestedSlug = requestedSlug.length > 0;
   const isValidRequestedSlug = hasRequestedSlug && SLUG_REGEX.test(requestedSlug);
 
@@ -243,7 +258,8 @@ export default function PortfolioPage() {
       };
     }
 
-    if (!hasRequestedSlug && !token) {
+    // ✅ slug도 id도 없고 토큰도 없으면 안내만
+    if (!hasRequestedSlug && !requestedId && !token) {
       setLoading(false);
       setData(null);
       setError(null);
@@ -260,6 +276,12 @@ export default function PortfolioPage() {
 
         let slugToUse = requestedSlug;
 
+        // ✅ 1) slug가 없고 id가 있으면: 해당 id의 share-link로 slug 해석
+        if (!slugToUse && requestedId) {
+          slugToUse = await fetchShareSlug(requestedId);
+        }
+
+        // ✅ 2) slug도 id도 없으면: 기존처럼 "내 PUBLISHED 첫 번째" fallback
         if (!slugToUse) {
           const myPortfolios = await fetchMyPortfolios();
           const portfolioId = pickPublishedPortfolioIdByListOrder(myPortfolios);
@@ -290,7 +312,7 @@ export default function PortfolioPage() {
     return () => {
       isCancelled = true;
     };
-  }, [requestedSlug, hasRequestedSlug, isValidRequestedSlug]);
+  }, [requestedSlug, hasRequestedSlug, isValidRequestedSlug, requestedId]);
 
   const handleCopyLink = async () => {
     if (!data) return;
@@ -362,13 +384,15 @@ export default function PortfolioPage() {
       </div>
 
       <div className={styles.content}>
-        {!hasRequestedSlug && !resolvedSlug && !loading && !error && (
+        {!hasRequestedSlug && !requestedId && !resolvedSlug && !loading && !error && (
           <div className={styles.stateBox}>
             <div className={styles.stateTitle}>공유 링크(slug)가 필요합니다.</div>
             <div className={styles.stateDesc}>
-              URL 뒤에 <code className={styles.inlineCode}>?slug=8글자</code> 형태로 접속해 주세요.
+              URL 뒤에 <code className={styles.inlineCode}>?slug=8글자</code> 또는{" "}
+              <code className={styles.inlineCode}>?id=포트폴리오ID</code> 형태로 접속해 주세요.
               <br />
-              예시: <code className={styles.inlineCode}>/portfolio?slug=ab12cd34</code>
+              예시: <code className={styles.inlineCode}>/portfolio?slug=ab12cd34</code>{" "}
+              또는 <code className={styles.inlineCode}>/portfolio?id=3</code>
             </div>
           </div>
         )}
