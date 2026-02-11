@@ -412,6 +412,33 @@ export default function CreatePage() {
       alert("프로젝트 이미지 업로드에 실패했습니다.");
     }
   };
+
+  const buildProjectPayloads = () => {
+    const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
+
+    return formData.projects
+      .map((project, index) => {
+        const normalizedLinks = getProjectLinks(project.projectLink)
+          .map((link) => link.trim())
+          .filter(Boolean)
+          .join("\n");
+
+        return {
+          ...project,
+          projectImg: project.projectImg || localProjectImages[index] || "",
+          projectLink: normalizedLinks,
+        };
+      })
+      .filter((project) => {
+        return Boolean(
+          project.projectName?.trim() ||
+          project.projectSummary?.trim() ||
+          project.projectLink?.trim() ||
+          project.projectImg?.trim()
+        );
+      });
+  };
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
     if (isSaving) return;
@@ -440,6 +467,10 @@ export default function CreatePage() {
           alert("이메일은 필수 입력 항목입니다.");
           return;
         }
+        if (!isValidEmail(normalizedEmail)) {
+          alert("이메일 형식을 다시 확인해주세요.");
+          return;
+        }
 
         body = {
           email: normalizedEmail,
@@ -447,16 +478,8 @@ export default function CreatePage() {
           location: formData.location?.trim() || null,
         };
       } else if (step === 3) {
-        const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
         body = {
-          projects: formData.projects.map((project, index) => ({
-            ...project,
-            projectImg: project.projectImg || localProjectImages[index] || "",
-            projectLink: getProjectLinks(project.projectLink)
-              .map((link) => link.trim())
-              .filter(Boolean)
-              .join("\n"),
-          })),
+          projects: buildProjectPayloads(),
         };
       } else if (step === 4) {
         body = {
@@ -491,6 +514,10 @@ export default function CreatePage() {
             alert("이메일은 필수 입력 항목입니다.");
             return;
           }
+          if (!isValidEmail(formData.email.trim())) {
+            alert("이메일 형식을 다시 확인해주세요.");
+            return;
+          }
 
           await savePortfolioStep(2, {
             email: formData.email.trim(),
@@ -498,13 +525,7 @@ export default function CreatePage() {
             location: formData.location?.trim() || null,
           }, nextPortfolioId);
           await savePortfolioStep(3, {
-            projects: formData.projects.map((project) => ({
-              ...project,
-              projectLink: getProjectLinks(project.projectLink)
-                .map((link) => link.trim())
-                .filter(Boolean)
-                .join("\n"),
-            })),
+            projects: buildProjectPayloads(),
           }, nextPortfolioId);
           await savePortfolioStep(4, {
             summaryIntro: formData.summaryIntro,
