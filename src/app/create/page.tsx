@@ -438,6 +438,7 @@ export default function CreatePage() {
         );
       });
   };
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   // 저장 및 다음 단계 이동
   const handleNext = async () => {
     if (isSaving) return;
@@ -464,6 +465,10 @@ export default function CreatePage() {
         const normalizedEmail = formData.email.trim();
         if (!normalizedEmail) {
           alert("이메일은 필수 입력 항목입니다.");
+          return;
+        }
+        if (!isValidEmail(normalizedEmail)) {
+          alert("이메일 형식을 다시 확인해주세요.");
           return;
         }
 
@@ -507,6 +512,10 @@ export default function CreatePage() {
         if (step === 1) {
           if (!formData.email.trim()) {
             alert("이메일은 필수 입력 항목입니다.");
+            return;
+          }
+          if (!isValidEmail(formData.email.trim())) {
+            alert("이메일 형식을 다시 확인해주세요.");
             return;
           }
 
