@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { buildApiUrl } from "@/lib/api/config";
+import { getPublicPortfolioDetail } from "@/lib/api/cards";
 import styles from "./explore.module.css";
 
 const DEFAULT_PROFILE_IMG = "/default-avatar.png";
@@ -18,6 +19,8 @@ type PortfolioListItem = {
   profileImg: string | null;
   categoryTitle: string | null;
   subCategory: string | null;
+  summaryIntro?: string | null;
+  intro?: string | null;
   tags: string[];
   updatedAt: string;
   status?: "DRAFT" | "PUBLISHED";
@@ -77,6 +80,12 @@ function isPublicListItem(item: PortfolioListItem) {
   return true;
 }
 
+function truncateIntro(value: string, maxLength = 40) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}...` : trimmed;
+}
+
 export default function ExplorePage() {
   const [items, setItems] = useState<PortfolioListItem[]>([]);
   const [page, setPage] = useState(0);
@@ -127,7 +136,21 @@ export default function ExplorePage() {
 
         const data = (await res.json()) as PortfolioListResponse;
         const nextItems = (data?.content ?? []).filter(isPublicListItem);
-        setItems(nextItems);
+
+        const withIntro = await Promise.all(
+          nextItems.map(async (item) => {
+            if (!item.slug) return item;
+            try {
+              const detail = await getPublicPortfolioDetail(item.slug);
+              const summaryIntro = detail?.data?.summaryIntro?.trim() || "";
+              return { ...item, summaryIntro };
+            } catch {
+              return item;
+            }
+          })
+        );
+
+        setItems(withIntro);
         setHasNext(Boolean(data?.hasNext));
         setTotalPages(typeof data?.totalPages === "number" ? data.totalPages : null);
       } catch (fetchError) {
@@ -281,6 +304,7 @@ export default function ExplorePage() {
           {items.map((item, index) => {
             const title = item.username?.trim() || item.categoryTitle || "미입력";
             const role = item.subCategory ?? "직무 미입력";
+            const intro = truncateIntro(item.summaryIntro ?? item.intro ?? "");
             const updatedDate = formatUpdatedDate(item.updatedAt);
             const link = item.slug ? `/portfolio?slug=${encodeURIComponent(item.slug)}` : null;
             const cardBody = (
@@ -299,6 +323,7 @@ export default function ExplorePage() {
                 </div>
                 <h3>{title}</h3>
                 <p>{role}</p>
+                {intro ? <p className={styles.cardIntro}>{intro}</p> : null}
                 <div className={styles.tagList}>
                   {item.tags && item.tags.length > 0 ? (
                     item.tags.map((tag) => (

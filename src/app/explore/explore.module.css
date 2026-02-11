@@ -231,6 +231,19 @@
   font-size: 13px;
 }
 
+.cardIntro {
+  margin-top: 6px;
+  color: #465063;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 0;
+}
+
 .cardDisabled {
   opacity: 0.6;
 }
