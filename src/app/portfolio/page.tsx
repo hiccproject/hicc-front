@@ -1,4 +1,4 @@
-// src/app/portfolio/page.tsx
+﻿// src/app/portfolio/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -41,6 +41,7 @@ type PortfolioDetailApi = {
   updatedAt: string;
   totalViewCount: number | null;
   todayViewCount: number | null;
+  username: string;
   owner: boolean;
 };
 
@@ -76,6 +77,7 @@ export type PortfolioDetail = {
   updatedAt: string;
   totalViewCount: number | null;
   todayViewCount: number | null;
+  username: string;
   owner: boolean;
 };
 
@@ -100,6 +102,10 @@ function normalizePortfolio(data: PortfolioDetailApi): PortfolioDetail {
 
   return {
     ...data,
+
+    // ✅ username null 방어 (원하면 기본값 바꿔도 됨)
+    username: (data.username ?? "").trim() || "사용자",
+
     tags: Array.isArray(data.tags) ? data.tags : [],
     projects: (data.projects ?? []).map((project, index) => ({
       title: project.projectName?.trim() || "프로젝트",

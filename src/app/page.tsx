@@ -1,4 +1,6 @@
-﻿"use client";
+﻿// src/app/page.tsx
+// 메인 페이지
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
