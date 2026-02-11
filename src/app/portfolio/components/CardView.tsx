@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "../portfolio.module.css";
 import type { PortfolioDetail, Project } from "../page";
 
@@ -40,6 +40,7 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
 
   const slides = useMemo(() => buildSlides(data, canViewStats), [data, canViewStats]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const swipeStartRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -57,6 +58,32 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
   const goNext = () => {
     if (!canMove) return;
     setCurrentIndex((prev) => (prev + 1) % slideCount);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    swipeStartRef.current = { x: event.clientX, y: event.clientY, active: true };
+    if (event.currentTarget.setPointerCapture) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLElement>) => {
+    if (!swipeStartRef.current?.active || !canMove) return;
+    const deltaX = event.clientX - swipeStartRef.current.x;
+    const deltaY = event.clientY - swipeStartRef.current.y;
+    swipeStartRef.current.active = false;
+
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        goNext();
+      } else {
+        goPrev();
+      }
+    }
+  };
+
+  const handlePointerCancel = () => {
+    if (swipeStartRef.current) swipeStartRef.current.active = false;
   };
 
   const renderProfileSlide = () => (
@@ -188,7 +215,12 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
         &lt;
       </button>
 
-      <section className={styles.homeCardStyle}>
+      <section
+        className={styles.homeCardStyle}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+      >
         <div className={styles.cardSlideMeta}>
           {currentIndex + 1} / {slideCount}
         </div>
