@@ -65,6 +65,25 @@ export async function signupMember(payload: SignupPayload) {
 }
 
 /* =======================
+   마이페이지 (GET /api/mypage)
+======================= */
+
+export type MyPageResponse = {
+  name: string;
+  email: string;
+  picture: string | null;
+  role: string;
+};
+
+export async function getMyPage(): Promise<MyPageResponse> {
+  // 명세: 응답이 래핑 없이 바로 {name,email,picture,role} 형태
+  return apiFetch<MyPageResponse>("/api/mypage", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+/* =======================
    비밀번호 관련
 ======================= */
 
@@ -153,7 +172,7 @@ export function requestGoogleLogin() {
 }
 
 export type GoogleConsentRequest = {
-  name: string; // ✅ 추가
+  name: string;
   personalInfoAgreement: boolean;
   serviceTermsAgreement: boolean;
 };

@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import ConfirmModal from "@/components/ConfirmModal";
 import styles from "./mypage.module.css";
 import { clearTokens } from "@/lib/auth/tokens";
-import { changeMemberPassword, deleteMemberAccount } from "@/lib/api/auth";
+import { changeMemberPassword, deleteMemberAccount, getMyPage } from "@/lib/api/auth";
 import { uploadImage } from "@/lib/api/uploads";
 import {
   clearStoredProfile,
@@ -31,7 +31,10 @@ const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_BASE_URL ?? "";
 function normalizeImageSrc(payload: UploadImageResponse): string {
   if (!payload) return "";
 
-  const raw = typeof payload === "string" ? payload : payload?.imageUrl ?? payload?.url ?? payload?.data ?? "";
+  const raw =
+    typeof payload === "string"
+      ? payload
+      : payload?.imageUrl ?? payload?.url ?? payload?.data ?? "";
   const normalized = raw.trim();
 
   if (!normalized) return "";
@@ -46,9 +49,7 @@ function normalizeImageSrc(payload: UploadImageResponse): string {
   }
 
   const matchedUrl = normalized.match(/https?:\/\/\S+/)?.[0];
-  if (matchedUrl) {
-    return matchedUrl;
-  }
+  if (matchedUrl) return matchedUrl;
 
   if (S3_BASE_URL) {
     return `${S3_BASE_URL.replace(/\/$/, "")}/${normalized.replace(/^\//, "")}`;
@@ -59,7 +60,7 @@ function normalizeImageSrc(payload: UploadImageResponse): string {
 
 export default function MyPage() {
   const router = useRouter();
-  
+
   const [name, setName] = useState("");
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
@@ -70,28 +71,80 @@ export default function MyPage() {
   const [tempValue, setTempValue] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const [passwordData, setPasswordData] = useState({
     current: "",
     new: "",
   });
 
-  useEffect(() => {
-    const profile = getStoredProfile();
-    if (profile) {
-      if (profile.email && profile.name?.trim()) {
-        setStoredNameForEmail(profile.email, profile.name);
-      }
-      const storedName = getStoredNameForLogin(profile.email ?? "");
-      setName(storedName || profile.name || "");
-      setEmailId(profile.email ?? "");
-      setPassword(profile.password ?? "");
-    }
+  const mountedRef = useRef(true);
 
-    const savedProfileImg = localStorage.getItem("profileImg");
-    if (savedProfileImg?.trim()) {
-      setProfilePreview(savedProfileImg);
-    }
+  useEffect(() => {
+    mountedRef.current = true;
+
+    // 1) 먼저 로컬(기존 로직)로 즉시 표시 -> 2) 서버 /api/mypage로 덮어쓰기
+    const bootstrapFromLocal = () => {
+      const profile = getStoredProfile();
+      if (profile) {
+        if (profile.email && profile.name?.trim()) {
+          setStoredNameForEmail(profile.email, profile.name);
+        }
+        const storedName = getStoredNameForLogin(profile.email ?? "");
+        setName(storedName || profile.name || "");
+        setEmailId(profile.email ?? "");
+        setPassword(profile.password ?? "");
+      }
+
+      const savedProfileImg = localStorage.getItem("profileImg");
+      if (savedProfileImg?.trim()) {
+        setProfilePreview(savedProfileImg);
+      }
+    };
+
+    const hydrateFromServer = async () => {
+      try {
+        const data = await getMyPage(); // ✅ GET /api/mypage
+
+        if (!mountedRef.current) return;
+
+        const serverName = (data?.name ?? "").trim();
+        const serverEmail = (data?.email ?? "").trim();
+        const serverPicture = (data?.picture ?? "").trim();
+
+        if (serverEmail && serverName) {
+          setStoredNameForEmail(serverEmail, serverName);
+        }
+
+        setName(serverName);
+        setEmailId(serverEmail);
+
+        // 기존에 저장된 password는 마이페이지 GET 응답에 없으니 유지(로컬에 있으면)
+        const existing = getStoredProfile();
+        setPassword(existing?.password ?? "");
+
+        // picture 처리
+        const finalImg = serverPicture || DEFAULT_PROFILE_IMG;
+        setProfilePreview(finalImg);
+        localStorage.setItem("profileImg", finalImg);
+
+        // 로컬 프로필 캐시도 서버값으로 동기화
+        setStoredProfile({
+          name: serverName,
+          email: serverEmail,
+          password: existing?.password ?? "",
+        });
+      } catch (e) {
+        // 서버 호출 실패하면 로컬값 유지
+        console.error("[mypage] GET /api/mypage failed:", e);
+      }
+    };
+
+    bootstrapFromLocal();
+    hydrateFromServer();
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const startEdit = (field: string, value: string) => {
@@ -127,7 +180,7 @@ export default function MyPage() {
   };
 
   const handleSave = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
+    if (e) e.preventDefault();
 
     if (editingField === "password") {
       if (!passwordData.current.trim()) {
@@ -243,20 +296,28 @@ export default function MyPage() {
           <section className={styles.content}>
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>개인정보</h3>
-              
+
               {/* 이름 수정 */}
               <div className={styles.infoItem}>
                 {editingField === "name" ? (
                   <form className={styles.editBlock} onSubmit={handleSave}>
-                    <input 
-                      className={styles.inputBar} 
-                      value={tempValue} 
+                    <input
+                      className={styles.inputBar}
+                      value={tempValue}
                       onChange={(e) => setTempValue(e.target.value)}
-                      autoFocus 
+                      autoFocus
                     />
                     <div className={styles.editActions}>
-                      <button type="submit" className={styles.saveBtn}>저장</button>
-                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
+                      <button type="submit" className={styles.saveBtn}>
+                        저장
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.cancelBtn}
+                        onClick={() => setEditingField(null)}
+                      >
+                        취소
+                      </button>
                     </div>
                   </form>
                 ) : (
@@ -265,12 +326,14 @@ export default function MyPage() {
                       <span className={styles.labelName}>이름</span>
                       <span className={styles.labelValue}>{name}</span>
                     </div>
-                    <button className={styles.editBtn} onClick={() => startEdit("name", name)}>수정</button>
+                    <button className={styles.editBtn} onClick={() => startEdit("name", name)}>
+                      수정
+                    </button>
                   </>
                 )}
               </div>
 
-              {/* 이메일 수정 */}
+              {/* 이메일 (현재 UI는 수정 없음) */}
               <div className={styles.infoItem}>
                 <div className={styles.infoLabel}>
                   <span className={styles.labelName}>이메일</span>
@@ -282,24 +345,28 @@ export default function MyPage() {
               <div className={styles.infoItem}>
                 {editingField === "password" ? (
                   <form className={styles.editBlock} onSubmit={handleSave}>
-                    <input 
+                    <input
                       type="password"
-                      className={styles.inputBar} 
+                      className={styles.inputBar}
                       placeholder="현재 비밀번호 입력"
                       value={passwordData.current}
                       onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
                       autoFocus
                     />
-                    <input 
+                    <input
                       type="password"
-                      className={styles.inputBar} 
+                      className={styles.inputBar}
                       placeholder="새 비밀번호 입력"
                       value={passwordData.new}
                       onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
                     />
                     <div className={styles.editActions}>
-                      <button type="submit" className={styles.saveBtn}>저장</button>
-                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>취소</button>
+                      <button type="submit" className={styles.saveBtn}>
+                        저장
+                      </button>
+                      <button type="button" className={styles.cancelBtn} onClick={() => setEditingField(null)}>
+                        취소
+                      </button>
                     </div>
                   </form>
                 ) : (
@@ -308,7 +375,9 @@ export default function MyPage() {
                       <span className={styles.labelName}>비밀번호</span>
                       <span className={styles.labelValue}>********</span>
                     </div>
-                    <button className={styles.editBtn} onClick={() => startEdit("password", "")}>수정</button>
+                    <button className={styles.editBtn} onClick={() => startEdit("password", "")}>
+                      수정
+                    </button>
                   </>
                 )}
               </div>
@@ -317,8 +386,12 @@ export default function MyPage() {
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>계정 관리</h3>
               <div className={styles.infoItem}>
-                <div className={styles.infoLabel}><span className={styles.labelName}>로그아웃</span></div>
-                <button className={styles.editBtn} onClick={handleLogout}>로그아웃</button>
+                <div className={styles.infoLabel}>
+                  <span className={styles.labelName}>로그아웃</span>
+                </div>
+                <button className={styles.editBtn} onClick={handleLogout}>
+                  로그아웃
+                </button>
               </div>
               <div className={styles.infoItem}>
                 <div className={styles.infoLabel}>
