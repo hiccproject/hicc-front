@@ -1,4 +1,4 @@
-//src/app/cards/page.tsx
+// src/app/cards/page.tsx
 "use client";
 
 import { MouseEvent, useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import { getAccessToken } from "@/lib/auth/tokens";
 import { deletePortfolio, getPortfolioShareLink, updatePortfolioStatus } from "@/lib/api/cards";
 import { getPortfolioProfileImage, removePortfolioProfileImage } from "@/lib/storage/portfolio-images";
+import { apiFetch } from "@/lib/api/client"; // [수정] apiFetch 임포트 추가
 
 // API 응답 데이터 타입 정의
 type PortfolioItem = {
@@ -19,6 +20,9 @@ type PortfolioItem = {
   lastStep: number;
   updatedAt: string;
 };
+
+// [수정] 내 명함 목록 응답 타입 (배열이거나 data 필드에 배열이 있는 구조 대응)
+type MyPortfolioResponse = PortfolioItem[] | { data: PortfolioItem[] };
 
 export default function CardsPage() {
   const router = useRouter();
@@ -74,35 +78,15 @@ export default function CardsPage() {
         setLoading(true);
         setError(null);
 
-        // API 호출
-        const res = await fetch("/api/portfolios/my", {
+        // [수정] apiFetch를 사용하여 호출 (URL 자동 완성 및 Auth 헤더 자동 처리)
+        const response = await apiFetch<MyPortfolioResponse>("/api/portfolios/my", {
           method: "GET",
-          // [중요] 쿠키와 헤더 모두 포함 (서버 설정에 따라 둘 중 하나가 필수일 수 있음)
-          credentials: "include", 
-          headers: {
-            Authorization: `Bearer ${token}`, 
-            Accept: "application/json",
-          },
+          auth: true, // 토큰 자동 포함 및 401 시 갱신 시도
         });
 
-        // 응답 본문을 텍스트로 먼저 읽어서 JSON 파싱 에러 방지
-        const text = await res.text();
-        let json;
-        try {
-          json = JSON.parse(text);
-        } catch (e) {
-          // JSON이 아닌 경우 (예: 404 HTML 페이지 등)
-          throw new Error(`서버 응답이 올바르지 않습니다. (Status: ${res.status})`);
-        }
-
-        if (!res.ok) {
-          // 서버에서 보내준 에러 메시지가 있으면 사용, 없으면 상태 코드 표시
-          throw new Error(json.message || `요청 실패 (${res.status})`);
-        }
-
-        // 응답이 배열 형태라고 가정 (제공해주신 예시 참고)
-        // 만약 { data: [...] } 형태라면 json.data 사용
-        const list = Array.isArray(json) ? json : json.data || [];
+        // 응답이 배열 형태인지, 객체({ data: [...] }) 형태인지 확인하여 처리
+        const list = Array.isArray(response) ? response : response.data || [];
+        
         setPortfolios(list);
         await fetchShareSlugs(list);
 
@@ -119,7 +103,15 @@ export default function CardsPage() {
   }, [router]);
 
   // 날짜 포맷팅 함수
-
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   const handleDelete = async (e: MouseEvent<HTMLButtonElement>, portfolioId: number) => {
     e.preventDefault();
@@ -137,16 +129,6 @@ export default function CardsPage() {
       console.error("명함 삭제 에러:", err);
       alert("명함 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
   };
 
   const handleToggleStatus = async (
@@ -206,7 +188,7 @@ export default function CardsPage() {
         {/* 에러 발생 시 구체적인 메시지 표시 */}
         {error && (
           <div className={styles.errorState}>
-            <p> 오류가 발생했습니다. </p>
+            <p>{error}</p>
             <button 
               onClick={() => window.location.reload()} 
               className={styles.retryBtn}
@@ -237,11 +219,10 @@ export default function CardsPage() {
             const isUpdating = updatingMap[item.id];
             
             // 링크: 작성 중이면 create 페이지, 완료되면 조회 페이지
-            // step이 0이거나 없을 경우 1로 기본 설정
             const nextStep = item.lastStep || 1;
             const cardLink = isDraft && !isComplete
               ? `/create?portfolioId=${item.id}&step=${nextStep}`
-              : `/portfolio?id=${item.id}`; // 추후 slug가 생기면 ?slug=${item.slug}로 변경
+              : `/portfolio?id=${item.id}`; 
             const localProfileImg = getPortfolioProfileImage(item.id);
 
             return (
