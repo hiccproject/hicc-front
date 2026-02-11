@@ -178,13 +178,12 @@ export async function agreeGoogleSignup(
   payload: GoogleConsentRequest
 ): Promise<GoogleConsentResponse> {
   return apiFetch<GoogleConsentResponse>(
-    buildApiUrl("/api/auth/sign-up/agree"),
+    "/api/auth/sign-up/agree", // buildApiUrl은 apiFetch 내부에서 처리되므로 경로만 작성
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      auth: true, 
       body: JSON.stringify(payload),
-      credentials: "include",
-      cache: "no-store",
+      // apiFetch가 credentials와 cache 설정을 내부에서 관리하므로 중복 코드는 삭제 가능
     }
   );
 }

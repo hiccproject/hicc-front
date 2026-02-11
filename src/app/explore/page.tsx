@@ -86,7 +86,7 @@ export default function ExplorePage() {
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef(false);
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["DEVELOPMENT"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [sort, setSort] = useState<SortKey>("POPULAR");
