@@ -110,17 +110,19 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
 
       <div className={styles.cardContactList}>
         <div className={styles.cardContactItem}>
-            {/* 아이콘 추가 가능 */}
-            <span className={styles.contactIcon}>메일 </span> {data.email}
+            <span className={`${styles.contactIcon} ${styles.contactIconMail}`} aria-hidden />
+            <span>{data.email}</span>
         </div>
         {data.phone && (
             <div className={styles.cardContactItem}>
-                <span className={styles.contactIcon}>전화 </span> {data.phone}
+                <span className={`${styles.contactIcon} ${styles.contactIconPhone}`} aria-hidden />
+                <span>{data.phone}</span>
             </div>
         )}
         {data.location && (
             <div className={styles.cardContactItem}>
-                <span className={styles.contactIcon}>지역 </span> {data.location}
+                <span className={`${styles.contactIcon} ${styles.contactIconLocation}`} aria-hidden />
+                <span>{data.location}</span>
             </div>
         )}
       </div>

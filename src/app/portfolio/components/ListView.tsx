@@ -40,9 +40,22 @@ export default function ListView({ data, isOwner = false }: ListViewProps) {
           <p className={styles.sideIntro}>{intro}</p>
 
           <div className={styles.sideContactList}>
-            <div className={styles.sideContactItem}>메일 {data.email}</div>
-            {data.phone && <div className={styles.sideContactItem}>전화 {data.phone}</div>}
-            {data.location && <div className={styles.sideContactItem}>지역 {data.location}</div>}
+            <div className={styles.sideContactItem}>
+              <span className={`${styles.contactIcon} ${styles.contactIconMail}`} aria-hidden />
+              <span>{data.email}</span>
+            </div>
+            {data.phone && (
+              <div className={styles.sideContactItem}>
+                <span className={`${styles.contactIcon} ${styles.contactIconPhone}`} aria-hidden />
+                <span>{data.phone}</span>
+              </div>
+            )}
+            {data.location && (
+              <div className={styles.sideContactItem}>
+                <span className={`${styles.contactIcon} ${styles.contactIconLocation}`} aria-hidden />
+                <span>{data.location}</span>
+              </div>
+            )}
           </div>
         </div>
 

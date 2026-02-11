@@ -35,9 +35,22 @@ export default function GridView({ data, isOwner = false }: GridViewProps) {
           <p className={styles.gridIntro}>{intro}</p>
 
           <div className={styles.gridContactRow}>
-            <div className={styles.gridContactPill}>메일 {data.email}</div>
-            {data.phone && <div className={styles.gridContactPill}>전화 {data.phone}</div>}
-            {data.location && <div className={styles.gridContactPill}>지역 {data.location}</div>}
+            <div className={styles.gridContactPill}>
+              <span className={`${styles.contactIcon} ${styles.contactIconMail}`} aria-hidden />
+              <span>{data.email}</span>
+            </div>
+            {data.phone && (
+              <div className={styles.gridContactPill}>
+                <span className={`${styles.contactIcon} ${styles.contactIconPhone}`} aria-hidden />
+                <span>{data.phone}</span>
+              </div>
+            )}
+            {data.location && (
+              <div className={styles.gridContactPill}>
+                <span className={`${styles.contactIcon} ${styles.contactIconLocation}`} aria-hidden />
+                <span>{data.location}</span>
+              </div>
+            )}
           </div>
         </div>
 
