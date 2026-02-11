@@ -10,6 +10,7 @@ export interface Project {
 export type Card = {
   id: string;
   name: string;
+  username?: string | null;
   role?: string;
   intro?: string;
   profileImage?: string;

@@ -9,7 +9,7 @@ interface GridViewProps {
 }
 
 export default function GridView({ data, isOwner = false }: GridViewProps) {
-  const name = data.category || "이름";
+  const name = data.username || "이름";
   const role = data.subCategory || "직무";
   const intro = data.summaryIntro || "안녕하세요! 소개 문구를 입력해 주세요.";
 

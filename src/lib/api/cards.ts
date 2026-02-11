@@ -21,6 +21,7 @@ function isPublicCard(card: Card) {
 type PortfolioItem = {
   id: number;
   title: string | null;
+  username?: string | null;
   profileImg: string | null;
   status: "DRAFT" | "PUBLISHED";
   lastStep: number;
@@ -31,6 +32,7 @@ type PortfolioItem = {
 
 type PublicPortfolioListItem = {
   slug: string | null;
+  username?: string | null;
   profileImg: string | null;
   categoryTitle: string | null;
   subCategory: string | null;
@@ -115,22 +117,24 @@ async function fetchPublicCards(limit: number): Promise<Card[]> {
 
     const detailed = await Promise.all(
       list.map(async (item) => {
-        if (!item.slug) return { item, detail: null };
+        if (!item.slug) return { item, detail: null, hasDetailError: true };
         try {
           const detail = await getPortfolioDetail(item.slug);
-          return { item, detail: detail?.data ?? null };
+          return { item, detail: detail?.data ?? null, hasDetailError: false };
         } catch {
-          return { item, detail: null };
+          return { item, detail: null, hasDetailError: true };
         }
       })
     );
 
-    return detailed.map(({ item, detail }, index) => {
-      const categoryLabel = getCategoryLabel(detail?.category);
-      const subCategory = detail?.subCategory || item.subCategory || "";
+    return detailed.map(({ item, detail, hasDetailError }, index) => {
+      const categoryLabel = getCategoryLabel(detail?.category) || item.categoryTitle?.trim() || "";
+      const subCategory = detail?.subCategory?.trim() || item.subCategory?.trim() || "";
+      const username = detail?.username?.trim() || item.username?.trim() || "";
       return {
         id: item.slug ? `public-${item.slug}` : `public-${index}`,
-        name: item.categoryTitle ?? "미입력",
+        name: username || "미입력",
+        username: username || null,
         role: categoryLabel,
         intro: detail?.summaryIntro?.trim() || "",
         profileImage: detail?.profileImg || item.profileImg || undefined,
@@ -142,7 +146,8 @@ async function fetchPublicCards(limit: number): Promise<Card[]> {
         category: categoryLabel || null,
         subCategory,
         tags: detail?.tags ?? item.tags ?? [],
-        linkHref: item.slug ? `/portfolio?slug=${encodeURIComponent(item.slug)}` : undefined,
+        linkHref:
+          !hasDetailError && item.slug ? `/portfolio?slug=${encodeURIComponent(item.slug)}` : undefined,
       };
     });
   } catch (error) {
@@ -256,13 +261,15 @@ export async function fetchMyCard(): Promise<Card | null> {
     if (published) {
       const { name, role } = normalizeTitleParts(published.title);
       const detail = await fetchPortfolioDetailById(published.id);
+      const username = detail?.username?.trim() || published.username?.trim() || storedName || name;
       const intro = detail?.summaryIntro?.trim() || "";
       const tags = Array.isArray(detail?.tags) ? detail?.tags : [];
       const categoryLabel = getCategoryLabel(detail?.category);
       const subCategory = detail?.subCategory || published.subCategory || role;
       return {
         id: published.id.toString(),
-        name: storedName || name,
+        name: username,
+        username,
         role: categoryLabel,
         intro,
         profileImage: detail?.profileImg || published.profileImg || undefined,
@@ -282,13 +289,15 @@ export async function fetchMyCard(): Promise<Card | null> {
     if (privateCard) {
       const { name, role } = normalizeTitleParts(privateCard.title);
       const detail = await fetchPortfolioDetailById(privateCard.id);
+      const username = detail?.username?.trim() || privateCard.username?.trim() || storedName || name;
       const intro = detail?.summaryIntro?.trim() || "";
       const tags = Array.isArray(detail?.tags) ? detail?.tags : [];
       const categoryLabel = getCategoryLabel(detail?.category);
       const subCategory = detail?.subCategory || privateCard.subCategory || role;
       return {
         id: privateCard.id.toString(),
-        name: storedName || name,
+        name: username,
+        username,
         role: categoryLabel,
         intro,
         profileImage: detail?.profileImg || privateCard.profileImg || undefined,
@@ -309,6 +318,8 @@ export async function fetchMyCard(): Promise<Card | null> {
       const singleDraft = inProgressDrafts.length === 1 ? inProgressDrafts[0] : null;
       const titleParts = singleDraft ? normalizeTitleParts(singleDraft.title) : { name: "작성 중인 명함", role: "" };
       const detail = singleDraft ? await fetchPortfolioDetailById(singleDraft.id) : null;
+      const username =
+        detail?.username?.trim() || singleDraft?.username?.trim() || storedName || titleParts.name;
       const categoryLabel = getCategoryLabel(detail?.category || singleDraft?.category);
       const subCategory = detail?.subCategory || singleDraft?.subCategory || titleParts.role;
       const linkHref = singleDraft
@@ -317,7 +328,8 @@ export async function fetchMyCard(): Promise<Card | null> {
 
       return {
         id: singleDraft ? singleDraft.id.toString() : "in-progress",
-        name: storedName || titleParts.name,
+        name: username,
+        username,
         role: categoryLabel,
         intro: "이어서 작성하기",
         profileImage: singleDraft?.profileImg || undefined,
@@ -351,7 +363,8 @@ export async function getHomeCards(limit = 6): Promise<HomeCardsResponse> {
   // 3. 상세 포트폴리오 Mock 데이터를 Card 타입으로 변환 (배경 카드용)
   const mockCards: Card[] = MOCK_PORTFOLIOS.map((portfolio) => ({
     id: portfolio.id.toString(),
-    name: portfolio.name, 
+    name: portfolio.name,
+    username: portfolio.name,
     role: portfolio.category,
     intro: portfolio.summaryIntro || "자기소개가 없습니다.",
     profileImage: portfolio.profileImg || undefined,
@@ -412,6 +425,7 @@ export type PortfolioData = {
 
 export type PortfolioDetailData = {
   id: number;
+  username?: string | null;
   category: PortfolioCategory;
   subCategory: string;
   profileImg?: string | null;

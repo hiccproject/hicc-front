@@ -14,6 +14,7 @@ type SortKey = "LATEST" | "OLDEST" | "POPULAR" | "REALTIME";
 
 type PortfolioListItem = {
   slug: string | null;
+  username?: string | null;
   profileImg: string | null;
   categoryTitle: string | null;
   subCategory: string | null;
@@ -251,7 +252,7 @@ export default function ExplorePage() {
 
         <section className={styles.grid}>
           {items.map((item, index) => {
-            const title = item.categoryTitle ?? "미입력";
+            const title = item.username?.trim() || item.categoryTitle || "미입력";
             const role = item.subCategory ?? "직무 미입력";
             const updatedDate = formatUpdatedDate(item.updatedAt);
             const link = item.slug ? `/portfolio?slug=${encodeURIComponent(item.slug)}` : null;

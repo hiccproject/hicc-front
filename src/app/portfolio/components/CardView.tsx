@@ -34,7 +34,7 @@ function safeText(value: string | null | undefined, fallback: string): string {
 }
 
 export default function CardView({ data, canViewStats = false }: CardViewProps) {
-  const name = safeText(data.category, "이름");
+  const name = safeText(data.username, "이름");
   const role = safeText(data.subCategory, "직무");
   const intro = safeText(data.summaryIntro, "안녕하세요! 소개 문구를 입력해 주세요.");
 
