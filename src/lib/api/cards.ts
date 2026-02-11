@@ -100,6 +100,15 @@ function extractSlug(value?: string | null) {
   return value?.trim().replace(/\/+$/, "").split("/").filter(Boolean).pop() || "";
 }
 
+function normalizePortfolioSlug(slug: string) {
+  return slug
+    .trim()
+    .replace(/\/+$/, "")
+    .split("/")
+    .filter(Boolean)
+    .pop();
+}
+
 async function fetchPublicCards(limit: number): Promise<Card[]> {
   if (limit <= 0) return [];
   try {
@@ -478,12 +487,7 @@ export async function getPortfolioShareLink(portfolioId: number) {
 }
 
 export async function getPortfolioDetail(slug: string) {
-  const normalizedSlug = slug
-    .trim()
-    .replace(/\/+$/, "")
-    .split("/")
-    .filter(Boolean)
-    .pop();
+  const normalizedSlug = normalizePortfolioSlug(slug);
 
   if (!normalizedSlug) {
     throw new Error("유효한 포트폴리오 슬러그가 없습니다.");
@@ -492,6 +496,18 @@ export async function getPortfolioDetail(slug: string) {
   return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${encodeURIComponent(normalizedSlug)}`, {
     method: "GET",
     auth: true,
+  });
+}
+
+export async function getPublicPortfolioDetail(slug: string) {
+  const normalizedSlug = normalizePortfolioSlug(slug);
+
+  if (!normalizedSlug) {
+    throw new Error("유효한 포트폴리오 슬러그가 없습니다.");
+  }
+
+  return apiFetch<{ data: PortfolioDetailData }>(`/api/portfolios/${encodeURIComponent(normalizedSlug)}`, {
+    method: "GET",
   });
 }
 
