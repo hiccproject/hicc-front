@@ -169,10 +169,14 @@ export type GoogleConsentResponse = {
 export async function consentGoogleSignup(
   payload: GoogleConsentRequest
 ): Promise<GoogleConsentResponse> {
-  return apiFetch<GoogleConsentResponse>("/api/auth/sign-up/consent", {
+  return apiFetch<GoogleConsentResponse>("/api/signup/consent", {
     method: "POST",
     auth: true,
     body: JSON.stringify(payload),
   });
 }
 
+/**
+ * (호환용) 기존 이름을 쓰는 코드가 남아있을 수 있어서 alias 유지
+ */
+export const agreeGoogleSignup = consentGoogleSignup;
