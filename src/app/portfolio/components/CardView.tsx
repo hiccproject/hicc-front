@@ -114,15 +114,6 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
   );
 
   const renderStatsSlide = () => {
-    const points = [16, 30, 42, 36, 50, 48, 66];
-    const polyline = points
-      .map((value, index) => {
-        const x = (index / (points.length - 1)) * 100;
-        const y = 80 - value;
-        return `${x},${y}`;
-      })
-      .join(" ");
-
     return (
       <>
         <div className={styles.cardTopRow}>
@@ -143,24 +134,16 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
         <p className={styles.cardIntro}>{intro}</p>
 
         <div className={styles.cardChartPanel}>
-          <svg viewBox="0 0 100 80" className={styles.cardChartSvg} aria-hidden>
-            <line x1="0" y1="80" x2="100" y2="80" className={styles.cardChartAxis} />
-            <line x1="0" y1="56" x2="100" y2="56" className={styles.cardChartAxis} />
-            <line x1="0" y1="32" x2="100" y2="32" className={styles.cardChartAxis} />
-            <polyline points={polyline} className={styles.cardChartPath} />
-            <circle cx="100" cy={80 - points[points.length - 1]} r="2.4" className={styles.cardChartPoint} />
-          </svg>
-
           <div className={styles.cardStatsRow}>
             <div className={styles.cardStatsItem}>
-              <span className={styles.cardStatsLabel}>일일 조회수</span>
+              <span className={styles.cardStatsLabel}>일일 조회수 :</span>
               <strong className={styles.cardStatsValue}>
                 {data.todayViewCount ?? 0}
                 <span className={styles.cardStatsUnit}>회</span>
               </strong>
             </div>
             <div className={styles.cardStatsItem}>
-              <span className={styles.cardStatsLabel}>전체 조회수</span>
+              <span className={styles.cardStatsLabel}>전체 조회수 :</span>
               <strong className={styles.cardStatsValue}>
                 {data.totalViewCount ?? 0}
                 <span className={styles.cardStatsUnit}>회</span>

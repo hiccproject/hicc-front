@@ -43,10 +43,9 @@ export default function GridView({ data, isOwner = false }: GridViewProps) {
 
         {isOwner && (
           <div className={styles.gridStatsCard}>
-            <div className={styles.statChart} />
             <div className={styles.statMetaRow}>
-              <span>일일 조회수</span>
-              <span>전체 조회수</span>
+              <span>일일 조회수 :</span>
+              <span>전체 조회수 :</span>
             </div>
             <div className={styles.statNumRow}>
               <span className={styles.statToday}>{data.todayViewCount ?? 0}회</span>

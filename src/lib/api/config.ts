@@ -1,3 +1,4 @@
+// src/lib/config.ts
 const DEFAULT_API_BASE_URL = "https://api.onepageme.kr";
 
 function normalizeBaseUrl(url: string) {

@@ -105,11 +105,13 @@ function normalizePortfolio(data: PortfolioDetailApi): PortfolioDetail {
   };
 }
 
-async function fetchPortfolioBySlug(slug: string): Promise<PortfolioDetail> {
+async function fetchPortfolioBySlug(slug: string, auth: boolean): Promise<PortfolioDetail> {
   const url = buildApiUrl(`/api/portfolios/${encodeURIComponent(slug)}`);
   const json = await apiFetch<PortfolioApiResponse<PortfolioDetailApi>>(url, {
     method: "GET",
-    auth: true,
+    // ✅ 공개 포트폴리오는 비로그인(토큰 없음)이어도 조회 가능해야 함
+    //    로그인 했을 때만 owner 판별(=본인 여부) 같은 추가 정보를 받을 수 있음
+    auth,
   });
 
   if (json.code !== "SUCCESS" || !json.data) {
@@ -216,6 +218,8 @@ export default function PortfolioPage() {
         setLoading(true);
         setError(null);
 
+        const canAuth = Boolean(token);
+
         let slugToUse = requestedSlug;
 
         if (!slugToUse && requestedId) {
@@ -229,7 +233,7 @@ export default function PortfolioPage() {
           slugToUse = await fetchShareSlug(portfolioId);
         }
 
-        const detail = await fetchPortfolioBySlug(slugToUse);
+        const detail = await fetchPortfolioBySlug(slugToUse, canAuth);
         if (isCancelled) return;
 
         setData(detail);
@@ -260,7 +264,6 @@ export default function PortfolioPage() {
     try {
       setSavingLayout(true);
       await savePortfolioLayoutType(data.id, layout);
-      // ✅ 저장 상태 반영
       setData((prev) => (prev ? { ...prev, layoutType: layout } : prev));
     } catch (e) {
       alert(e instanceof Error ? e.message : "레이아웃 저장 실패");
@@ -291,8 +294,6 @@ export default function PortfolioPage() {
     }
     router.push(`/create?portfolioId=${data.id}&mode=edit`);
   };
-
-  const canViewStats = Boolean(getAccessToken());
 
   return (
     <div className={styles.fullScreenContainer}>
@@ -325,7 +326,6 @@ export default function PortfolioPage() {
               </button>
             </div>
 
-            {/* ✅ 흰색 칸에서 떨어져 오른쪽에 떠 있는 저장 버튼 / 필요할 때만 노출 */}
             {hasLayoutChanged && (
               <button
                 onClick={handleApplyLayout}
@@ -339,7 +339,8 @@ export default function PortfolioPage() {
         )}
 
         <div className={styles.actionGroup}>
-          <button className={styles.actionBtn}>명함 미리보기</button>
+          {/* ✅ 본인 포트폴리오에서만 미리보기 노출 */}
+          {isOwner && <button className={styles.actionBtn}>명함 미리보기</button>}
           {isOwner && (
             <button className={styles.actionBtn} onClick={handleEditPortfolio}>
               항목 수정
@@ -381,7 +382,8 @@ export default function PortfolioPage() {
 
         {!loading && !error && data && (
           <>
-            {effectiveLayout === "CARD" && <CardView data={data} canViewStats={canViewStats} />}
+            {/* ✅ 조회수는 owner일 때만 */}
+            {effectiveLayout === "CARD" && <CardView data={data} canViewStats={isOwner} />}
             {effectiveLayout === "LIST" && <ListView data={data} isOwner={data.owner} />}
             {effectiveLayout === "GRID" && <GridView data={data} isOwner={data.owner} />}
           </>

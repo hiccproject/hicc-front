@@ -30,6 +30,36 @@
   gap: 16px;
 }
 
+/* 이름 레이아웃 추가 */
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.nameLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+  min-width: 40px;
+}
+
+.nameInput {
+  flex: 1;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid #ececf1;
+  padding: 0 14px;
+  font-size: 14px;
+  outline: none;
+}
+
+.nameInput:focus {
+  border-color: #4a67ff;
+}
+
 .agreeBox {
   border: 1px solid #ececf1;
   border-radius: 14px;

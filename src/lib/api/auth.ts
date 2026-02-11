@@ -40,7 +40,6 @@ export async function loginMember(payload: LoginPayload) {
     throw new Error(message);
   }
 
-  // 일반 로그인에서는 응답에 토큰이 올 수 있으므로 처리
   const tokens = extractTokens(data);
   setTokens(tokens);
 
@@ -149,12 +148,6 @@ export async function deleteMemberAccount(): Promise<DeleteAccountResponse> {
 export const GOOGLE_LOGIN_URL =
   "https://api.onepageme.kr/oauth2/authorization/google";
 
-/**
- * 구글 로그인 시작
- * - fetch ❌
- * - 이동 ⭕
- * - 성공/신규 분기는 백엔드 리다이렉트가 처리
- */
 export function requestGoogleLogin() {
   if (typeof window === "undefined") return;
   window.location.assign(GOOGLE_LOGIN_URL);
@@ -171,20 +164,31 @@ export type GoogleConsentResponse = {
 };
 
 /**
- * 신규 유저 약관 동의
- * - 백엔드가 신규 유저 상태를 세션/쿠키로 식별
+ * 신규 유저 약관 동의 (consent)
+ * - 우선 /consent로 시도
+ * - 백엔드가 아직 /agree만 지원하면 404/C007일 때 /agree로 폴백
  */
 export async function agreeGoogleSignup(
   payload: GoogleConsentRequest
 ): Promise<GoogleConsentResponse> {
-  return apiFetch<GoogleConsentResponse>(
-    "/api/auth/sign-up/agree", // buildApiUrl은 apiFetch 내부에서 처리되므로 경로만 작성
-    {
+  try {
+    return await apiFetch<GoogleConsentResponse>("/api/auth/sign-up/consent", {
       method: "POST",
-      auth: true, 
+      auth: true,
       body: JSON.stringify(payload),
-      // apiFetch가 credentials와 cache 설정을 내부에서 관리하므로 중복 코드는 삭제 가능
-    }
-  );
-}
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const isNotFound =
+      message.includes("API Error 404") || message.includes("C007");
 
+    if (!isNotFound) throw error;
+
+    // 폴백: 기존 agree 엔드포인트
+    return apiFetch<GoogleConsentResponse>("/api/auth/sign-up/agree", {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(payload),
+    });
+  }
+}
