@@ -166,7 +166,7 @@ export type GoogleConsentResponse = {
 export async function consentGoogleSignup(
   payload: GoogleConsentRequest
 ): Promise<GoogleConsentResponse> {
-  return apiFetch<GoogleConsentResponse>("/api/auth/signup/consent", {
+  return apiFetch<GoogleConsentResponse>("/api/signup/consent", {
     method: "POST",
     auth: true,
     body: JSON.stringify(payload),
