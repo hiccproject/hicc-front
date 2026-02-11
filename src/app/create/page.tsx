@@ -16,8 +16,12 @@ import {
   setPortfolioProjectImage,
   setPortfolioProjectImages,
 } from "@/lib/storage/project-images";
+import CardView from "@/app/portfolio/components/CardView";
+import ListView from "@/app/portfolio/components/ListView";
+import GridView from "@/app/portfolio/components/GridView";
+import type { PortfolioDetail } from "@/app/portfolio/page";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 type StepMeta = {
   id: Step;
@@ -63,7 +67,40 @@ const steps: StepMeta[] = [
   { id: 2, label: "추가 정보 입력", headline: "추가 정보를 입력해주세요" },
   { id: 3, label: "프로젝트 첨부", headline: "프로젝트를 첨부해주세요" },
   { id: 4, label: "태그와 소개글 입력", headline: "명함 태그와 소개글을 입력해주세요" },
+  { id: 5, label: "레이아웃 선택", headline: "명함 디자인을 선택해주세요 (예시 이미지)" },
 ];
+
+const PREVIEW_PORTFOLIO: PortfolioDetail = {
+  id: 0,
+  category: "DEVELOPMENT",
+  subCategory: "프론트엔드",
+  profileImg: null,
+  email: "hello@example.com",
+  phone: "010-1234-5678",
+  location: "Seoul",
+  projects: [
+    {
+      title: "One Page Me",
+      projectSummary: "개인의 명함을 한 페이지로 구성하는 서비스.",
+      image: null,
+      links: [{ title: "homepage", url: "https://example.com" }],
+    },
+    {
+      title: "Portfolio Kit",
+      projectSummary: "포트폴리오 템플릿을 빠르게 만드는 도구.",
+      image: null,
+      links: [{ title: "docs", url: "https://example.com/docs" }],
+    },
+  ],
+  summaryIntro: "안녕하세요! 프론트엔드 개발자입니다.",
+  layoutType: "CARD",
+  tags: ["React", "UI"],
+  updatedAt: new Date().toISOString(),
+  totalViewCount: 1280,
+  todayViewCount: 32,
+  username: "OnePage",
+  owner: false,
+};
 
 function normalizeImageSrc(payload: UploadImageResponse): string {
   if (!payload) return "";
@@ -133,7 +170,7 @@ export default function CreatePage() {
 
   useEffect(() => {
     const qsPortfolioId = Number(searchParams.get("portfolioId") || "0");
-    const normalizedStep = requestedStep >= 1 && requestedStep <= 4 ? (requestedStep as Step) : 1;
+    const normalizedStep = requestedStep >= 1 && requestedStep <= 5 ? (requestedStep as Step) : 1;
 
     if (qsPortfolioId > 0) {
       setPortfolioId(qsPortfolioId);
@@ -421,10 +458,14 @@ export default function CreatePage() {
               .join("\n"),
           })),
         };
-      } else {
+      } else if (step === 4) {
         body = {
           summaryIntro: formData.summaryIntro,
           tags: formData.tags || [],
+        };
+      } else {
+        body = {
+          layoutType: formData.layoutType,
         };
       }
 
@@ -476,14 +517,13 @@ export default function CreatePage() {
         }
       }
 
-      if (step < 4) {
+      if (step < 5) {
         setStep((prev) => (prev + 1) as Step);
         window.scrollTo(0, 0);
       } else {
         if (!nextPortfolioId) {
           throw new Error("명함 ID가 없습니다.");
         }
-        await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
         alert("명함 발행이 완료되었습니다!");
         router.push("/cards");
       }
@@ -683,7 +723,7 @@ export default function CreatePage() {
               <div className={styles.bioPanel}>
                 <section className={styles.subStepCard}>
                   <div className={styles.subStepHeader}>
-                    <span className={styles.subStepNumber}>{isEditMode ? "03" : "04"}</span>
+                    <span className={styles.subStepNumber}>{isEditMode ? "03" : "04-1"}</span>
                     <h3 className={styles.subStepTitle}>명함에 표시될 태그를 생성해주세요 (최대 5개)</h3>
                   </div>
                   <div className={styles.tagEditor}>
@@ -714,7 +754,7 @@ export default function CreatePage() {
 
                 <section className={styles.subStepCard}>
                   <div className={styles.subStepHeader}>
-                    <span className={styles.subStepNumber}>{isEditMode ? "04" : "05"}</span>
+                    <span className={styles.subStepNumber}>{isEditMode ? "04" : "04-2"}</span>
                     <h3 className={styles.subStepTitle}>당신의 페이지를 요약하는 소개글을 써주세요</h3>
                   </div>
                   <textarea
@@ -725,6 +765,65 @@ export default function CreatePage() {
                     onChange={handleChange}
                   />
                 </section>
+              </div>
+            )}
+            {/* Step 5: 레이아웃 */}
+            {(step === 5 || isEditMode) && (
+              <div className={styles.layoutPanel}>
+                {isEditMode && (
+                  <div className={`${styles.stepHeader} ${isEditMode ? styles.stepHeaderEdit : ""}`}>
+                    <span className={styles.stepNumber}>05</span>
+                    <h2 className={styles.stepHeadline}>명함 디자인을 선택해주세요 (예시 이미지)</h2>
+                  </div>
+                )}
+                <div className={styles.layoutGrid}>
+                  {[
+                    { value: "CARD", label: "카드형", desc: "정보를 카드처럼 한 눈에 보여줘요." },
+                    { value: "LIST", label: "리스트형", desc: "내용을 순서대로 자연스럽게 보여줘요." },
+                    { value: "GRID", label: "그리드형", desc: "프로젝트를 타일처럼 강조해요." },
+                  ].map((option) => {
+                    const isSelected = formData.layoutType === option.value;
+                    const preview =
+                      option.value === "CARD" ? (
+                        <CardView data={PREVIEW_PORTFOLIO} canViewStats={false} />
+                      ) : option.value === "LIST" ? (
+                        <ListView data={PREVIEW_PORTFOLIO} isOwner={false} />
+                      ) : (
+                        <GridView data={PREVIEW_PORTFOLIO} isOwner={false} />
+                      );
+                    return (
+                      <div
+                        key={option.value}
+                        className={`${styles.layoutOption} ${isSelected ? styles.layoutOptionActive : ""}`}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            layoutType: option.value as PortfolioData["layoutType"],
+                          }))
+                        }
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setFormData((prev) => ({
+                              ...prev,
+                              layoutType: option.value as PortfolioData["layoutType"],
+                            }));
+                          }
+                        }}
+                      >
+                        <div className={styles.layoutPreviewFrame}>
+                          <div className={styles.layoutPreviewCanvas}>{preview}</div>
+                        </div>
+                        <div className={styles.layoutMeta}>
+                          <span className={styles.layoutTitle}>{option.label}</span>
+                          <span className={styles.layoutDesc}>{option.desc}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -747,7 +846,7 @@ export default function CreatePage() {
             onClick={handleNext}
             disabled={isSaving || isHydrating}
           >
-            {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 4 ? "✓" : "→"}
+            {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 5 ? "✓" : "→"}
           </button>
         </div>
       </main>
