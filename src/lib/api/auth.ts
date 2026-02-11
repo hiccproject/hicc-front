@@ -165,30 +165,14 @@ export type GoogleConsentResponse = {
 
 /**
  * 신규 유저 약관 동의 (consent)
- * - 우선 /consent로 시도
- * - 백엔드가 아직 /agree만 지원하면 404/C007일 때 /agree로 폴백
  */
-export async function agreeGoogleSignup(
+export async function consentGoogleSignup(
   payload: GoogleConsentRequest
 ): Promise<GoogleConsentResponse> {
-  try {
-    return await apiFetch<GoogleConsentResponse>("/api/auth/sign-up/consent", {
-      method: "POST",
-      auth: true,
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    const isNotFound =
-      message.includes("API Error 404") || message.includes("C007");
-
-    if (!isNotFound) throw error;
-
-    // 폴백: 기존 agree 엔드포인트
-    return apiFetch<GoogleConsentResponse>("/api/auth/sign-up/agree", {
-      method: "POST",
-      auth: true,
-      body: JSON.stringify(payload),
-    });
-  }
+  return apiFetch<GoogleConsentResponse>("/api/auth/sign-up/consent", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
 }
+

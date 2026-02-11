@@ -7,9 +7,13 @@ import Header from "@/components/Header";
 import styles from "./terms.module.css";
 import Modal from "@/components/Modal";
 import ConfirmModal from "@/components/ConfirmModal";
-import { agreeGoogleSignup } from "@/lib/api/auth";
-import { apiFetch } from "@/lib/api/client";
+import { consentGoogleSignup } from "@/lib/api/auth";
 import { setTokens } from "@/lib/auth/tokens";
+import {
+  getStoredProfile,
+  setStoredNameForEmail,
+  setStoredProfile,
+} from "@/lib/auth/profile";
 
 export default function TermsPage() {
   const router = useRouter();
@@ -30,30 +34,43 @@ export default function TermsPage() {
 
     setIsSubmitting(true);
     try {
-      // ✅ (중요) 임시 토큰이 있다면 "요청 전에" 먼저 저장
+      /**
+       * ✅ 1) 이름 저장 로직 (MyPage 방식 그대로)
+       * - 서버 호출 X
+       * - profile store/localStorage만 업데이트
+       */
+      const profile = getStoredProfile();
+      const email = profile?.email ?? "";
+
+      if (email) {
+        setStoredNameForEmail(email, name.trim());
+      }
+
+      setStoredProfile({
+        name: name.trim(),
+        email: profile?.email ?? "",
+        password: profile?.password ?? "",
+      });
+
+      /**
+       * ✅ 2) 약관 동의 (agree -> consent로 변경)
+       */
+      const res = await consentGoogleSignup({
+        personalInfoAgreement,
+        serviceTermsAgreement,
+      });
+
+      /**
+       * ✅ 3) 임시 토큰 저장 (기존 로직 유지)
+       */
       const tempTokens = (window as any).__tempTokens;
-      if (tempTokens?.accessToken && tempTokens?.refreshToken) {
+      if (tempTokens) {
         setTokens({
           accessToken: tempTokens.accessToken,
           refreshToken: tempTokens.refreshToken,
         });
         delete (window as any).__tempTokens;
       }
-
-      // 1) 이름 업데이트 (백엔드가 JSON 문자열을 받는지 객체를 받는지에 따라 바꿔야 할 수도 있음)
-      await apiFetch("/api/mypage/update", {
-        method: "POST",
-        auth: true,
-        // 만약 백엔드가 { name: "..." } 형태를 원하면 아래로 바꿔줘:
-        // body: JSON.stringify({ name }),
-        body: JSON.stringify(name),
-      });
-
-      // 2) 약관 동의 (auth.ts에서 /consent 우선, 404면 /agree 폴백)
-      const res = await agreeGoogleSignup({
-        personalInfoAgreement,
-        serviceTermsAgreement,
-      });
 
       alert(res.message || "회원가입이 완료되었습니다.");
       window.dispatchEvent(new Event("auth-changed"));
@@ -77,7 +94,9 @@ export default function TermsPage() {
 
           <form className={styles.form} onSubmit={onSubmit}>
             <div className={styles.nameRow}>
-              <label htmlFor="name" className={styles.nameLabel}>이름</label>
+              <label htmlFor="name" className={styles.nameLabel}>
+                이름
+              </label>
               <input
                 id="name"
                 type="text"

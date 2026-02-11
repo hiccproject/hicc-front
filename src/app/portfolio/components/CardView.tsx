@@ -88,27 +88,41 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
 
   const renderProfileSlide = () => (
     <>
-      <div className={styles.cardTopRow}>
+      <div className={styles.cardProfileGroup}>
         <img
           src={data.profileImg || DEFAULT_PROFILE_IMG}
           alt={name}
-          className={styles.cardAvatarCircle}
+          className={styles.cardAvatarLarge} 
           onError={(event) => {
             (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
           }}
         />
-        <div className={styles.cardIdentity}>
-          <h2 className={styles.cardName}>{name}</h2>
-          <span className={styles.cardRolePill}>{role}</span>
+        
+        <div className={styles.cardIdentityColumn}>
+          <div className={styles.cardNameRow}>
+             <h2 className={styles.cardName}>{name}</h2>
+             <span className={styles.cardRolePill}>{role}</span>
+          </div>
         </div>
       </div>
 
       <p className={styles.cardIntro}>{intro}</p>
 
       <div className={styles.cardContactList}>
-        <div className={styles.cardContactItem}>이메일 {data.email}</div>
-        {data.phone && <div className={styles.cardContactItem}>전화번호 {data.phone}</div>}
-        {data.location && <div className={styles.cardContactItem}>주소 {data.location}</div>}
+        <div className={styles.cardContactItem}>
+            {/* 아이콘 추가 가능 */}
+            <span className={styles.contactIcon}>이메일✉️</span> {data.email}
+        </div>
+        {data.phone && (
+            <div className={styles.cardContactItem}>
+                <span className={styles.contactIcon}>전화번호📞</span> {data.phone}
+            </div>
+        )}
+        {data.location && (
+            <div className={styles.cardContactItem}>
+                <span className={styles.contactIcon}>지역📍</span> {data.location}
+            </div>
+        )}
       </div>
     </>
   );
