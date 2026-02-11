@@ -295,8 +295,62 @@
   font-size: 14px;
 }
 
-.loader {
-  height: 1px;
+.pagination {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pageNav {
+  border: none;
+  background: #ffffff;
+  color: #3c4a6b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(15, 33, 71, 0.08);
+  cursor: pointer;
+}
+
+.pageNav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageButton,
+.pageActive {
+  border: none;
+  background: #ffffff;
+  color: #3c4a6b;
+  font-size: 13px;
+  font-weight: 600;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  box-shadow: 0 10px 22px rgba(15, 33, 71, 0.08);
+  cursor: pointer;
+}
+
+.pageActive {
+  background: #4066f5;
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(64, 102, 245, 0.25);
+}
+
+.pageEllipsis {
+  color: #8b93a8;
+  font-weight: 600;
+  padding: 0 4px;
 }
 
 @media (max-width: 768px) {

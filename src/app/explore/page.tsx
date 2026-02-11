@@ -27,6 +27,11 @@ type PortfolioListItem = {
 type PortfolioListResponse = {
   content: PortfolioListItem[];
   hasNext: boolean;
+  page?: number;
+  size?: number;
+  totalElements?: number;
+  totalPages?: number;
+  last?: boolean;
 };
 
 type CategoryOption = {
@@ -76,6 +81,7 @@ export default function ExplorePage() {
   const [items, setItems] = useState<PortfolioListItem[]>([]);
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(true);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isFetchingRef = useRef(false);
@@ -85,8 +91,6 @@ export default function ExplorePage() {
   const [tagInput, setTagInput] = useState("");
   const [sort, setSort] = useState<SortKey>("POPULAR");
 
-  const loaderRef = useRef<HTMLDivElement | null>(null);
-
   const activeCategoryLabels = useMemo(() => {
     return CATEGORY_OPTIONS.filter((option) => selectedCategories.includes(option.value)).map(
       (option) => option.label
@@ -94,7 +98,7 @@ export default function ExplorePage() {
   }, [selectedCategories]);
 
   const fetchPage = useCallback(
-    async (pageNumber: number, replace = false) => {
+    async (pageNumber: number) => {
       if (isFetchingRef.current) return;
       isFetchingRef.current = true;
       setLoading(true);
@@ -123,8 +127,9 @@ export default function ExplorePage() {
 
         const data = (await res.json()) as PortfolioListResponse;
         const nextItems = (data?.content ?? []).filter(isPublicListItem);
-        setItems((prev) => (replace ? nextItems : [...prev, ...nextItems]));
+        setItems(nextItems);
         setHasNext(Boolean(data?.hasNext));
+        setTotalPages(typeof data?.totalPages === "number" ? data.totalPages : null);
       } catch (fetchError) {
         setError(fetchError instanceof Error ? fetchError.message : "목록을 불러올 수 없습니다.");
       } finally {
@@ -136,37 +141,17 @@ export default function ExplorePage() {
   );
 
   useEffect(() => {
-    setItems([]);
-    setPage(0);
-    setHasNext(true);
-    fetchPage(0, true);
-  }, [fetchPage]);
-
-  useEffect(() => {
-    if (page === 0) return;
     fetchPage(page);
   }, [page, fetchPage]);
-
-  useEffect(() => {
-    if (!loaderRef.current || !hasNext) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !loading) {
-          setPage((prev) => prev + 1);
-        }
-      },
-      { rootMargin: "200px" }
-    );
-
-    observer.observe(loaderRef.current);
-    return () => observer.disconnect();
-  }, [hasNext, loading]);
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
     );
+    setPage(0);
+    setHasNext(true);
+    setTotalPages(null);
+    setItems([]);
   };
 
   const handleTagSubmit = (event: React.FormEvent) => {
@@ -179,11 +164,47 @@ export default function ExplorePage() {
     }
     setSelectedTags((prev) => [...prev, normalized]);
     setTagInput("");
+    setPage(0);
+    setHasNext(true);
+    setTotalPages(null);
+    setItems([]);
   };
 
   const removeTag = (tag: string) => {
     setSelectedTags((prev) => prev.filter((item) => item !== tag));
+    setPage(0);
+    setHasNext(true);
+    setTotalPages(null);
+    setItems([]);
   };
+
+  const goToPage = (nextPage: number) => {
+    if (nextPage < 0) return;
+    if (totalPages !== null && nextPage >= totalPages) return;
+    setPage(nextPage);
+  };
+
+  const pagination = useMemo(() => {
+    if (totalPages === null) return null;
+    if (totalPages <= 1) return { pages: [0], showFirst: false, showLast: false, leftEllipsis: false, rightEllipsis: false };
+
+    const groupSize = 5;
+    const half = Math.floor(groupSize / 2);
+    let start = Math.max(0, page - half);
+    let end = Math.min(totalPages - 1, start + groupSize - 1);
+    start = Math.max(0, end - groupSize + 1);
+
+    const pages = [];
+    for (let p = start; p <= end; p += 1) pages.push(p);
+
+    return {
+      pages,
+      showFirst: start > 0,
+      showLast: end < totalPages - 1,
+      leftEllipsis: start > 1,
+      rightEllipsis: end < totalPages - 2,
+    };
+  }, [page, totalPages]);
 
   return (
     <div className={styles.page}>
@@ -212,7 +233,13 @@ export default function ExplorePage() {
             <select
               id="sort"
               value={sort}
-              onChange={(event) => setSort(event.target.value as SortKey)}
+              onChange={(event) => {
+                setSort(event.target.value as SortKey);
+                setPage(0);
+                setHasNext(true);
+                setTotalPages(null);
+                setItems([]);
+              }}
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -305,7 +332,67 @@ export default function ExplorePage() {
           <p className={styles.empty}>조건에 맞는 포트폴리오가 없습니다.</p>
         ) : null}
 
-        <div ref={loaderRef} className={styles.loader} />
+        <div className={styles.pagination}>
+          <button
+            type="button"
+            className={styles.pageNav}
+            onClick={() => goToPage(page - 1)}
+            disabled={page === 0 || loading}
+          >
+            ← 이전
+          </button>
+
+          {pagination ? (
+            <div className={styles.pageNumbers}>
+              {pagination.showFirst ? (
+                <button
+                  type="button"
+                  className={page === 0 ? styles.pageActive : styles.pageButton}
+                  onClick={() => goToPage(0)}
+                  disabled={loading}
+                >
+                  1
+                </button>
+              ) : null}
+              {pagination.leftEllipsis ? <span className={styles.pageEllipsis}>…</span> : null}
+              {pagination.pages.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={page === p ? styles.pageActive : styles.pageButton}
+                  onClick={() => goToPage(p)}
+                  disabled={loading}
+                >
+                  {p + 1}
+                </button>
+              ))}
+              {pagination.rightEllipsis ? <span className={styles.pageEllipsis}>…</span> : null}
+              {pagination.showLast ? (
+                <button
+                  type="button"
+                  className={page === (totalPages ?? 1) - 1 ? styles.pageActive : styles.pageButton}
+                  onClick={() => goToPage((totalPages ?? 1) - 1)}
+                  disabled={loading}
+                >
+                  {totalPages}
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <div className={styles.pageNumbers}>
+              <span className={styles.pageEllipsis}>Page {page + 1}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={styles.pageNav}
+            onClick={() => goToPage(page + 1)}
+            disabled={loading || (totalPages !== null ? page >= totalPages - 1 : !hasNext)}
+          >
+            다음 →
+          </button>
+        </div>
       </main>
     </div>
   );
