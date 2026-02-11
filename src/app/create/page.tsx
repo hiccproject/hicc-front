@@ -481,10 +481,10 @@ export default function CreatePage() {
         window.scrollTo(0, 0);
       } else {
         if (!nextPortfolioId) {
-          throw new Error("포트폴리오 ID가 없습니다.");
+          throw new Error("명함 ID가 없습니다.");
         }
         await savePortfolioStep(5, { layoutType: formData.layoutType }, nextPortfolioId);
-        alert("포트폴리오 발행이 완료되었습니다!");
+        alert("명함 발행이 완료되었습니다!");
         router.push("/cards");
       }
     } catch (error) {

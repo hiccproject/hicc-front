@@ -354,7 +354,7 @@ export default function ExplorePage() {
         {error ? <p className={styles.error}>{error}</p> : null}
         {loading ? <p className={styles.loading}>불러오는 중...</p> : null}
         {!loading && items.length === 0 && !error ? (
-          <p className={styles.empty}>조건에 맞는 포트폴리오가 없습니다.</p>
+          <p className={styles.empty}>조건에 맞는 명함이 없습니다.</p>
         ) : null}
 
         <div className={styles.pagination}>

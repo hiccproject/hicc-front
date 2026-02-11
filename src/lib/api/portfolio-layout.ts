@@ -1,55 +1,61 @@
+// src/lib/api/portfolio-layout.ts
 import { buildApiUrl } from "@/lib/api/config";
-import { apiFetch } from "@/lib/api/client";
+import { getAccessToken } from "@/lib/auth/tokens";
 
 export type LayoutType = "CARD" | "LIST" | "GRID";
 
-type ApiResponse<T> = {
-  code: string;
-  message: string;
-  data?: T;
-};
+async function parseJsonSafe(res: Response) {
+  return res.json().catch(() => null);
+}
 
 /**
- * step=5 layout 저장
- * - 서버가 PATCH 매핑이 없으면 404(C007)로 떨어질 수 있어서
- *   PATCH -> (404면) POST fallback
+ * 저장 API (명세)
+ * https://api.onepageme.kr/api/portfolios/save?portfolioId=63002&step=5
+ * body: { "layoutType": "LIST" }
  */
 export async function savePortfolioLayoutType(portfolioId: number, layoutType: LayoutType) {
-  const url = buildApiUrl(`/api/portfolios?portfolioId=${portfolioId}&step=5`);
+  const accessToken = getAccessToken();
+  const url = buildApiUrl(
+    `/api/portfolios/save?portfolioId=${encodeURIComponent(String(portfolioId))}&step=5`
+  );
+
   const body = JSON.stringify({ layoutType });
 
-  // 1) PATCH 시도
-  try {
-    const res = await apiFetch<ApiResponse<number>>(url, {
+  // 1) POST 시도
+  let res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    credentials: "include",
+    body,
+    cache: "no-store",
+  });
+
+  // 404면 메서드가 다른 케이스가 많아서 PATCH로 재시도
+  if (res.status === 404) {
+    res = await fetch(url, {
       method: "PATCH",
-      auth: true,
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      credentials: "include",
       body,
+      cache: "no-store",
     });
-
-    if (!res || res.code !== "SUCCESS") {
-      throw new Error(res?.message || "레이아웃 저장 실패");
-    }
-    return res.data ?? null;
-  } catch (e: any) {
-    // 2) PATCH가 404/C007이면 POST 재시도
-    const msg = String(e?.message ?? "");
-    const is404 =
-      msg.includes("404") ||
-      msg.includes("C007") ||
-      msg.toLowerCase().includes("not found") ||
-      msg.toLowerCase().includes("찾을 수");
-
-    if (!is404) throw e;
-
-    const res2 = await apiFetch<ApiResponse<number>>(url, {
-      method: "POST",
-      auth: true,
-      body,
-    });
-
-    if (!res2 || res2.code !== "SUCCESS") {
-      throw new Error(res2?.message || "레이아웃 저장 실패");
-    }
-    return res2.data ?? null;
   }
+
+  const data = await parseJsonSafe(res);
+
+  if (!res.ok) {
+    const msg =
+      data?.message ||
+      data?.error ||
+      `레이아웃 저장 실패 (HTTP ${res.status})`;
+    throw new Error(msg);
+  }
+
+  return data;
 }
