@@ -1,6 +1,5 @@
 // src/types/card.ts
 
-// [UPDATED] 프로젝트 데이터 구조 변경
 export interface Project {
   projectName: string;
   projectSummary: string;

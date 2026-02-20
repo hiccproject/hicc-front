@@ -34,3 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## React + Next” 조합이 너희 프로젝트에 특히 맞는 이유 (실제 기능과 연결)
+
+토큰 기반 로그인/상태 동기화: 컴포넌트 상태 + 이벤트(auth-changed, storage)로 UI 반영이 자연스럽다.
+
+멀티 스텝 폼(Create 1~5): 단계별 UI 분기/검증/저장 로직이 React 방식에 잘 맞음.
+
+공유 링크/공개 페이지: Next의 SSR/SSG가 링크 공유/SEO에 이점.
+
+빠른 배포/협업: Vercel + Next가 개발→배포 루프를 짧게 만들어준다

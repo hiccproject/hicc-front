@@ -13,7 +13,7 @@ import { savePortfolioLayoutType, type LayoutType } from "@/lib/api/portfolio-la
 import { buildApiUrl } from "@/lib/api/config";
 import { apiFetch } from "@/lib/api/client";
 
-// ... (이전 타입 정의들은 그대로 유지) ...
+// ... (타입 정의들은 그대로 유지) ...
 type PortfolioApiResponse<T> = {
   code: string;
   message: string;
@@ -160,6 +160,30 @@ function buildPortfolioShareUrl(shareValueOrSlug: string): string {
   const normalized = normalizeSlug(shareValueOrSlug);
   return `${window.location.origin}/portfolio?slug=${encodeURIComponent(normalized)}`;
 }
+
+// 아이콘 컴포넌트
+const EyeIcon = () => (
+  <svg className={styles.btnIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg className={styles.btnIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+  </svg>
+);
+
+const ShareIcon = () => (
+  <svg className={styles.btnIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+  </svg>
+);
 
 export default function PortfolioPage() {
   const router = useRouter();
@@ -335,25 +359,29 @@ export default function PortfolioPage() {
 
         <div className={styles.actionGroup}>
           {isRealOwner && !isPreviewMode && (
-            <button className={styles.actionBtn} onClick={() => setIsPreviewMode(true)}>
-              미리보기
+            <button className={`${styles.baseBtn} ${styles.btnOutline}`} onClick={() => setIsPreviewMode(true)}>
+              <EyeIcon />
+              <span>미리보기</span>
             </button>
           )}
           
           {isPreviewMode && (
-             <button className={styles.actionBtn} onClick={() => setIsPreviewMode(false)}>
-              미리보기 종료
+             <button className={`${styles.baseBtn} ${styles.btnOutline}`} onClick={() => setIsPreviewMode(false)}>
+              <EyeIcon />
+              <span>미리보기 종료</span>
             </button>
           )}
 
           {isEditMode && (
-            <button className={styles.actionBtn} onClick={handleEditPortfolio}>
-              항목 수정
+            <button className={`${styles.baseBtn} ${styles.btnOutline}`} onClick={handleEditPortfolio}>
+              <EditIcon />
+              <span>수정</span>
             </button>
           )}
           
-          <button className={styles.actionBtn} onClick={handleCopyLink}>
-            링크 복사
+          <button className={`${styles.baseBtn} ${styles.btnSolid}`} onClick={handleCopyLink}>
+            <ShareIcon />
+            <span>링크 복사</span>
           </button>
         </div>
       </div>

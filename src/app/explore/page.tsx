@@ -98,7 +98,7 @@ export default function ExplorePage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [sort, setSort] = useState<SortKey>("POPULAR");
+  const [sort, setSort] = useState<SortKey>("REALTIME");
 
   const activeCategoryLabels = useMemo(() => {
     return CATEGORY_OPTIONS.filter((option) => selectedCategories.includes(option.value)).map(
