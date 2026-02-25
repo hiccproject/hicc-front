@@ -49,8 +49,9 @@ import {
   changeMemberPassword,
   deleteMemberAccount,
   getMyPage,
+  updateMyPageName,
+  updateMyPageProfile,
 } from "@/lib/api/auth";
-import { uploadImage } from "@/lib/api/uploads";
 import {
   clearStoredProfile,
   getStoredNameForLogin,
@@ -60,57 +61,7 @@ import {
   setStoredProfile,
 } from "../../lib/auth/profile";
 
-// 업로드 응답이 문자열(URL) 또는 객체 형태로 올 수 있어 유니온 타입으로 처리
-type UploadImageResponse =
-  | string
-  | {
-      data?: string;
-      url?: string;
-      imageUrl?: string;
-    };
-
 const DEFAULT_PROFILE_IMG = "/default-avatar.png";
-
-// S3_BASE_URL: 업로드 응답이 "키"만 내려올 때 URL로 조합하기 위한 베이스
-// 환경 변수로 주입되며, 없는 경우에는 상대값은 최종적으로 빈 문자열 처리
-const S3_BASE_URL = process.env.NEXT_PUBLIC_S3_BASE_URL ?? "";
-
-// 업로드 응답에서 실제 사용할 이미지 src를 뽑아내는 유틸
-// - http/https/blob/data는 그대로 허용
-// - 문자열에 URL이 섞여 있으면 정규식으로 추출
-// - 키만 있을 경우 S3_BASE_URL과 조합
-function normalizeImageSrc(payload: UploadImageResponse): string {
-  if (!payload) return "";
-
-  const raw =
-    typeof payload === "string"
-      ? payload
-      : payload?.imageUrl ?? payload?.url ?? payload?.data ?? "";
-  const normalized = raw.trim();
-
-  if (!normalized) return "";
-
-  if (
-    normalized.startsWith("http://") ||
-    normalized.startsWith("https://") ||
-    normalized.startsWith("blob:") ||
-    normalized.startsWith("data:")
-  ) {
-    return normalized;
-  }
-
-  const matchedUrl = normalized.match(/https?:\/\/\S+/)?.[0];
-  if (matchedUrl) return matchedUrl;
-
-  if (S3_BASE_URL) {
-    return `${S3_BASE_URL.replace(/\/$/, "")}/${normalized.replace(
-      /^\//,
-      ""
-    )}`;
-  }
-
-  return "";
-}
 
 export default function MyPage() {
   const router = useRouter();
@@ -248,18 +199,32 @@ export default function MyPage() {
     setProfilePreview(localPreview);
 
     try {
-      const uploaded = (await uploadImage(file)) as UploadImageResponse;
-      const uploadedUrl = normalizeImageSrc(uploaded);
-      const finalUrl = uploadedUrl || DEFAULT_PROFILE_IMG;
+      const response = await updateMyPageProfile(file);
+
+      const refreshed = await getMyPage().catch(() => null);
+      const serverPicture = refreshed?.picture?.trim() ?? "";
+      const finalUrl = serverPicture || DEFAULT_PROFILE_IMG;
 
       setProfilePreview(finalUrl);
       localStorage.setItem("profileImg", finalUrl);
-      alert("사진이 변경되었습니다.");
+
+      alert(response?.message ?? "프로필 사진이 변경되었습니다.");
+
+      if (response?.redirectUrl) {
+        router.push(response.redirectUrl);
+      }
     } catch (error) {
       console.error(error);
       setProfilePreview(DEFAULT_PROFILE_IMG);
       localStorage.setItem("profileImg", DEFAULT_PROFILE_IMG);
-      alert("이미지 업로드에 실패하여 기본 이미지가 사용됩니다.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "프로필 사진 변경에 실패했습니다."
+      );
+    } finally {
+      URL.revokeObjectURL(localPreview);
+      e.target.value = "";
     }
   };
 
@@ -309,13 +274,32 @@ export default function MyPage() {
         return;
       }
     } else if (editingField === "name") {
-      setName(tempValue);
-
-      if (emailId) {
-        setStoredNameForEmail(emailId, tempValue);
+      const nextName = tempValue.trim();
+      if (!nextName) {
+        alert("이름을 입력해주세요.");
+        return;
       }
 
-      setStoredProfile({ name: tempValue, email: emailId, password });
+      try {
+        const response = await updateMyPageName(nextName);
+        setName(nextName);
+
+        if (emailId) {
+          setStoredNameForEmail(emailId, nextName);
+        }
+
+        setStoredProfile({ name: nextName, email: emailId, password });
+
+        alert(response?.message ?? "정보가 수정되었습니다.");
+        if (response?.redirectUrl) {
+          router.push(response.redirectUrl);
+        }
+      } catch (error) {
+        alert(
+          error instanceof Error ? error.message : "이름 수정에 실패했습니다."
+        );
+        return;
+      }
     } else if (editingField === "email") {
       // 현재 UI에서는 이메일 수정 폼이 없지만,
       // 로직은 남아있어 확장 시 사용할 수 있는 상태

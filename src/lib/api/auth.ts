@@ -243,6 +243,34 @@ export type DeleteAccountResponse = {
   message?: string;
 };
 
+export type MyPageMutationResponse = {
+  redirectUrl?: string;
+  message?: string;
+};
+
+export async function updateMyPageName(
+  name: string
+): Promise<MyPageMutationResponse> {
+  const query = new URLSearchParams({ name }).toString();
+  return apiFetch<MyPageMutationResponse>(`/api/mypage/update?${query}`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
+export async function updateMyPageProfile(
+  file: File
+): Promise<MyPageMutationResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return apiFetch<MyPageMutationResponse>("/api/mypage/profile", {
+    method: "POST",
+    auth: true,
+    body: formData,
+  });
+}
+
 /**
  * deleteMemberAccount
  *
