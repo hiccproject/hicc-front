@@ -52,6 +52,10 @@ import {
   PortfolioData,
 } from "@/lib/api/cards";
 import { uploadImage } from "@/lib/api/uploads";
+import {
+  IMAGE_FILE_TOO_LARGE_MESSAGE,
+  MAX_IMAGE_FILE_SIZE_BYTES,
+} from "@/lib/api/upload-error";
 import { getStoredProfile } from "@/lib/auth/profile";
 
 // portfolio-images: portfolioId 단위로 프로필 이미지 URL을 저장/복원하는 로컬 스토리지 유틸
@@ -403,6 +407,11 @@ export default function CreatePage() {
   const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+      alert(IMAGE_FILE_TOO_LARGE_MESSAGE);
+      e.target.value = "";
+      return;
+    }
 
     const localPreview = URL.createObjectURL(file);
     setProfilePreview(localPreview);
@@ -421,7 +430,7 @@ export default function CreatePage() {
     } catch (error) {
       console.error(error);
       setFormData((prev) => ({ ...prev, profileImg: DEFAULT_PROFILE_IMG }));
-      alert("이미지 업로드에 실패하여 기본 이미지가 사용됩니다.");
+      alert(error instanceof Error ? error.message : "이미지 업로드에 실패하여 기본 이미지가 사용됩니다.");
     } finally {
       setIsProfileUploading(false);
     }
@@ -526,6 +535,11 @@ export default function CreatePage() {
   const handleProjectImageChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+      alert(IMAGE_FILE_TOO_LARGE_MESSAGE);
+      e.target.value = "";
+      return;
+    }
 
     const localPreview = URL.createObjectURL(file);
     setProjectImagePreviews((prev) => {
@@ -556,7 +570,7 @@ export default function CreatePage() {
     } catch (error) {
       console.error(error);
       handleProjectChange(index, "projectImg", "");
-      alert("프로젝트 이미지 업로드에 실패했습니다.");
+      alert(error instanceof Error ? error.message : "프로젝트 이미지 업로드에 실패했습니다.");
     }
   };
 

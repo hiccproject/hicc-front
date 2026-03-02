@@ -21,6 +21,11 @@
 import { buildApiUrl } from "@/lib/api/config";
 import { apiFetch } from "@/lib/api/client";
 import { extractTokens, getAccessToken, setTokens } from "@/lib/auth/tokens";
+import {
+  IMAGE_FILE_TOO_LARGE_MESSAGE,
+  MAX_IMAGE_FILE_SIZE_BYTES,
+  isLikelyPayloadTooLargeError,
+} from "@/lib/api/upload-error";
 
 /* =======================
    일반 로그인 / 회원가입
@@ -261,14 +266,26 @@ export async function updateMyPageName(
 export async function updateMyPageProfile(
   file: File
 ): Promise<MyPageMutationResponse> {
+  if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+    throw new Error(IMAGE_FILE_TOO_LARGE_MESSAGE);
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
-  return apiFetch<MyPageMutationResponse>("/api/mypage/profile", {
-    method: "POST",
-    auth: true,
-    body: formData,
-  });
+  try {
+    return await apiFetch<MyPageMutationResponse>("/api/mypage/profile", {
+      method: "POST",
+      auth: true,
+      body: formData,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (isLikelyPayloadTooLargeError(file, message)) {
+      throw new Error(IMAGE_FILE_TOO_LARGE_MESSAGE);
+    }
+    throw error;
+  }
 }
 
 /**

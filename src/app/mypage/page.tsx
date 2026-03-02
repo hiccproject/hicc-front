@@ -60,6 +60,10 @@ import {
   setStoredNameForEmail,
   setStoredProfile,
 } from "../../lib/auth/profile";
+import {
+  IMAGE_FILE_TOO_LARGE_MESSAGE,
+  MAX_IMAGE_FILE_SIZE_BYTES,
+} from "@/lib/api/upload-error";
 
 const DEFAULT_PROFILE_IMG = "/default-avatar.png";
 
@@ -194,6 +198,11 @@ export default function MyPage() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+      alert(IMAGE_FILE_TOO_LARGE_MESSAGE);
+      e.target.value = "";
+      return;
+    }
 
     const localPreview = URL.createObjectURL(file);
     setProfilePreview(localPreview);

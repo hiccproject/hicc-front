@@ -8,6 +8,11 @@
 // 얘도 apiFetch로 통합 필요
 import { buildApiUrl } from "@/lib/api/config";
 import { getAccessToken } from "@/lib/auth/tokens";
+import {
+  IMAGE_FILE_TOO_LARGE_MESSAGE,
+  MAX_IMAGE_FILE_SIZE_BYTES,
+  isLikelyPayloadTooLargeError,
+} from "@/lib/api/upload-error";
 
 /**
  * readResponseBody
@@ -46,6 +51,10 @@ async function readResponseBody(res: Response) {
  *    - 공개 업로드/로그인 업로드 정책이 바뀌어도 호출부 로직이 단순해짐
  */
 async function uploadFile(path: string, file: File) {
+  if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+    throw new Error(IMAGE_FILE_TOO_LARGE_MESSAGE);
+  }
+
   const formData = new FormData();
 
   // 서버가 기대하는 multipart key가 "file"이라는 전제
@@ -59,21 +68,30 @@ async function uploadFile(path: string, file: File) {
   // - 업로드는 사용자가 오래 머문 뒤 실행할 가능성이 높아서, 만료 대응이 필요하면 apiFetch 기반으로 통합하는 게 더 안정적이다.
   const token = getAccessToken();
 
-  const res = await fetch(buildApiUrl(path), {
-    method: "POST",
+  let res: Response;
+  try {
+    res = await fetch(buildApiUrl(path), {
+      method: "POST",
 
-    // FormData 업로드에서는 Content-Type을 직접 지정하지 않는다.
-    // 여기서는 Authorization만 넣기 위해 headers를 조건부로 구성
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      // FormData 업로드에서는 Content-Type을 직접 지정하지 않는다.
+      // 여기서는 Authorization만 넣기 위해 headers를 조건부로 구성
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
 
-    // 쿠키 기반 인증/세션을 병행하는 서버일 수 있어 include 유지
-    credentials: "include",
+      // 쿠키 기반 인증/세션을 병행하는 서버일 수 있어 include 유지
+      credentials: "include",
 
-    body: formData,
+      body: formData,
 
-    // 업로드 요청은 캐시되면 안 되므로 no-store
-    cache: "no-store",
-  });
+      // 업로드 요청은 캐시되면 안 되므로 no-store
+      cache: "no-store",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (isLikelyPayloadTooLargeError(file, message)) {
+      throw new Error(IMAGE_FILE_TOO_LARGE_MESSAGE);
+    }
+    throw error;
+  }
 
   const data = await readResponseBody(res);
 
@@ -89,6 +107,10 @@ async function uploadFile(path: string, file: File) {
    *   (운영에서 스택트레이스/내부 메시지를 그대로 노출하기 싫을 수 있음)
    */
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error(IMAGE_FILE_TOO_LARGE_MESSAGE);
+    }
+
     const message =
       typeof data === "object" && data !== null && "message" in data
         ? (data as { message?: string }).message
