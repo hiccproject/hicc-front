@@ -23,6 +23,9 @@ import TokenQueryHandler from "@/components/TokenQueryHandler";
 export const metadata: Metadata = {
   title: "OnePageMe",
   description: "One page portfolio service",
+  icons: {
+    icon: "/logo.png",
+  },
   // 확장 가능:
   // openGraph, twitter, icons 등 추가 가능
   // SEO를 강화하려면 페이지별 metadata 분리도 고려 가능
