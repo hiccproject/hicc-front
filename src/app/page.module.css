@@ -15,6 +15,10 @@
   padding: 18px 24px 80px;
 }
 
+/* =========================
+   DESKTOP (기존 컨셉 유지)
+========================= */
+
 .hero {
   position: relative;
   width: 100%;
@@ -25,31 +29,29 @@
 
 .heroLeft {
   position: absolute;
-  /* 브라우저 왼쪽 끝에서 일정 여백 유지 */
-  left: 0; 
+  left: 0;
   top: 20%;
   transform: translateY(-50%);
-  z-index: 100; /* 카드들보다 위로 배치 */
+  z-index: 100;
   max-width: 400px;
-  pointer-events: none; /* 컨테이너가 카드 클릭을 방해하지 않음 */
+  pointer-events: none;
 }
 
 .heroLeft > * {
-  pointer-events: auto; /* 버튼 등 실제 요소는 클릭 가능하게 설정 */
+  pointer-events: auto;
 }
 
 .heroRight {
   position: absolute;
   left: 50%;
   top: 60%;
-  transform: translate(-50%, -50%); /* 화면 정중앙 */
+  transform: translate(-50%, -50%);
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
   pointer-events: auto;
 }
-
 
 .title {
   font-size: 42px;
@@ -79,7 +81,7 @@
   justify-content: center;
   height: 44px;
   padding: 0 18px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -112,28 +114,86 @@
   border-color: #b5b5b5;
 }
 
+/* =========================
+   TABLET 이하: 기본 여백 조정
+========================= */
 @media (max-width: 900px) {
   .shell {
     padding: 24px 16px 60px;
   }
-
-  .hero {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    padding-top: 28px;
-  }
-
-  .heroLeft {
-    min-height: auto;
-  }
-
-  .heroRight {
-    padding-top: 0;
-  }
 }
 
+/* =========================
+   MOBILE: 사진 같은 랜딩 레이아웃
+   - absolute 해제
+   - 세로 스택(텍스트 → 버튼 → 카드)
+   - 중앙 정렬 + 넉넉한 여백
+========================= */
 @media (max-width: 768px) {
   .headerWrap {
     padding: 16px 16px 0;
+  }
+
+  .shell {
+    padding: 12px 16px 40px;
+    max-width: 520px; /* 모바일 화면에서 카드/텍스트 폭 컨트롤 */
+  }
+
+  .hero {
+    min-height: auto;
+    padding: 26px 0 18px;
+    position: relative;
+  }
+
+  /* ⭐ 핵심: 모바일에선 absolute 제거하고 자연 흐름 */
+  .heroLeft {
+    position: static;
+    transform: none;
+    max-width: none;
+    pointer-events: auto;
+    z-index: auto;
+  }
+
+  .title {
+    font-size: 32px;
+    line-height: 1.15;
+    margin: 26px 0 14px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+    color: #4b4f58;
+  }
+
+  /* 사진처럼 버튼이 제목 아래 왼쪽 정렬로 2개 */
+  .ctaRow {
+    margin-left: 0;
+    margin-top: 0;
+    gap: 12px;
+  }
+
+  .btn {
+    height: 44px;
+    border-radius: 12px;
+    padding: 0 16px;
+  }
+
+  /* 카드 영역: 아래로 내려서 가운데 배치 */
+  .heroRight {
+    position: static;
+    transform: none;
+    width: 100%;
+    margin-top: 26px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* RandomCardWall이 너무 크면 모바일에서 폭 제한(안 깨지게) */
+  .heroRight > * {
+    width: 100%;
+    max-width: 420px;
   }
 }

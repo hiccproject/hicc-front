@@ -795,22 +795,33 @@ export default function CreatePage() {
         <section className={`${styles.body} ${isEditMode ? styles.bodySingle : ""}`}>
           {/* 신규 생성 모드에서만 Stepper 표시 */}
           {!isEditMode && (
-            <aside className={styles.stepper}>
-              <div className={styles.stepLine} />
-              {steps.map((item) => (
-                <div key={item.id} className={styles.stepItem}>
-                  <div
-                    className={`${styles.stepDot} ${
-                      item.id === step ? styles.stepDotActive : ""
-                    }`}
-                  />
-                  <div className={styles.stepText}>
-                    <span className={styles.stepTitle}>STEP 0{item.id}</span>
-                    <span className={styles.stepLabel}>{item.label}</span>
-                  </div>
+             <>
+              {/* 모바일 전용: 상단 가로 진행바 */}
+              <div className={styles.mobileStepper} aria-label="생성 진행 단계">
+                <div className={styles.mobileProgress}>
+                  {steps.map((s) => (
+                    <div
+                      key={s.id}
+                      className={`${styles.mobileProgressSeg} ${s.id <= step ? styles.mobileProgressSegActive : ""}`}
+                    />
+                  ))}
                 </div>
-              ))}
-            </aside>
+              </div>
+
+              {/* 데스크톱 전용: 기존 세로 Stepper 유지 */}
+              <aside className={styles.stepper}>
+                <div className={styles.stepLine} />
+                {steps.map((item) => (
+                  <div key={item.id} className={styles.stepItem}>
+                    <div className={`${styles.stepDot} ${item.id === step ? styles.stepDotActive : ""}`} />
+                    <div className={styles.stepText}>
+                      <span className={styles.stepTitle}>STEP 0{item.id}</span>
+                      <span className={styles.stepLabel}>{item.label}</span>
+                    </div>
+                  </div>
+                ))}
+              </aside>
+            </>
           )}
 
           <div className={`${styles.content} ${isEditMode ? styles.contentEdit : ""}`}>
@@ -859,7 +870,6 @@ export default function CreatePage() {
             {/* Step 2: 추가 정보 입력(신규 step2 + 수정 모드에서 항상 노출) */}
             {(step === 2 || isEditMode) && (
               <div className={styles.stepPanelColumn}>
-                {/* 수정 모드일 때는 각 섹션에 번호/헤더를 별도로 표시 */}
                 {isEditMode && (
                   <div className={`${styles.stepHeader} ${styles.stepHeaderEdit}`}>
                     <span className={styles.stepNumber}>01</span>
@@ -867,60 +877,41 @@ export default function CreatePage() {
                   </div>
                 )}
 
+                {/* ✅ Step2에서는 profileEditor/직군선택 UI 제거 */}
                 <div className={`${styles.stepPanel} ${styles.step2Panel}`}>
-                  {profileEditor}
                   <div className={`${styles.formStack} ${styles.step2FormStack}`}>
-                    <div className={styles.formRow}>
-                      <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleCategoryChange}
-                        className={styles.selectBox}
-                      >
-                        {CATEGORY_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-
-                      <select
-                        name="subCategory"
-                        value={formData.subCategory}
+                    <div className={styles.fieldGroup}>
+                      <div className={styles.fieldLabel}>이메일 (필수)</div>
+                      <input
+                        name="email"
+                        className={styles.textInputWide}
+                        value={formData.email}
                         onChange={handleChange}
-                        className={styles.selectBox}
-                      >
-                        {subCategoryOptions.map((job) => (
-                          <option key={job} value={job}>
-                            {job}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder=""  // 스샷처럼 라벨이 위에 있으니 비워도 됨
+                      />
                     </div>
 
-                    <input
-                      name="email"
-                      className={styles.textInputWide}
-                      placeholder="이메일을 입력해주세요."
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
+                    <div className={styles.fieldGroup}>
+                      <div className={styles.fieldLabel}>전화번호 (선택)</div>
+                      <input
+                        name="phone"
+                        className={styles.textInputWide}
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder=""
+                      />
+                    </div>
 
-                    <input
-                      name="phone"
-                      className={styles.textInputWide}
-                      placeholder="전화번호를 입력해주세요. (선택, 010-0000-0000 형식으로 작성해주세요.)"
-                      value={formData.phone}
-                      onChange={handleChange}
-                    />
-
-                    <input
-                      name="location"
-                      className={styles.textInputWide}
-                      placeholder="위치를 입력해주세요. (선택)"
-                      value={formData.location}
-                      onChange={handleChange}
-                    />
+                    <div className={styles.fieldGroup}>
+                      <div className={styles.fieldLabel}>위치 (선택)</div>
+                      <input
+                        name="location"
+                        className={styles.textInputWide}
+                        value={formData.location}
+                        onChange={handleChange}
+                        placeholder=""
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1119,12 +1110,13 @@ export default function CreatePage() {
                       <div
                         key={option.value}
                         className={`${styles.layoutOption} ${isSelected ? styles.layoutOptionActive : ""}`}
-                        onClick={() =>
+                        onPointerDown={(e) => {
+                          e.preventDefault();
                           setFormData((prev) => ({
                             ...prev,
                             layoutType: option.value as PortfolioData["layoutType"],
-                          }))
-                        }
+                          }));
+                        }}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(event) => {
@@ -1157,22 +1149,33 @@ export default function CreatePage() {
         <div className={`${styles.navControls} ${isEditMode ? styles.navControlsFloating : ""}`}>
           {!isEditMode ? (
             <button
-              className={`${styles.navButton} ${styles.navButtonGhost}`}
+              className={`${styles.navButton} ${styles.navButtonGhost} ${styles.navButtonWide}`}
               type="button"
-              onClick={() => setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev))}
-              disabled={!canGoPrev || isSaving || isHydrating}
+              onClick={() => {
+                if (step === 1) router.push("/"); // ✅ 모바일 스샷처럼 "취소" 느낌
+                else setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev));
+              }}
+              disabled={isSaving || isHydrating}
             >
-              ←
+              <span className={styles.navIcon}>←</span>
+              <span className={styles.navText}>{step === 1 ? "취소" : "이전"}</span>
             </button>
           ) : null}
 
           <button
-            className={`${styles.navButton} ${styles.navButtonSolid} ${isEditMode ? styles.navButtonDone : ""}`}
+            className={`${styles.navButton} ${styles.navButtonSolid} ${styles.navButtonWide} ${
+              isEditMode ? styles.navButtonDone : ""
+            }`}
             type="button"
             onClick={handleNext}
             disabled={isSaving || isHydrating}
           >
-            {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 5 ? "✓" : "→"}
+            <span className={styles.navIcon}>
+              {isSaving || isHydrating ? "" : isEditMode ? "✓" : step === 5 ? "✓" : "→"}
+            </span>
+            <span className={styles.navText}>
+              {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 5 ? "완료" : "다음"}
+            </span>
           </button>
         </div>
       </main>

@@ -114,8 +114,9 @@ export default function RandomCardWall() {
     <div className={styles.carouselContainer}>
       {/* 왼쪽 화살표: 좌측 카드로 이동 */}
       <button
-        className={styles.arrowBtn}
+        className={`${styles.arrowBtn} ${styles.arrowLeft}`}
         onClick={() => setCurrentIndex(leftIdx)}
+        aria-label="이전 명함"
       >
         ‹
       </button>
@@ -229,8 +230,9 @@ export default function RandomCardWall() {
 
       {/* 오른쪽 화살표: 우측 카드로 이동 */}
       <button
-        className={styles.arrowBtn}
+        className={`${styles.arrowBtn} ${styles.arrowRight}`}
         onClick={() => setCurrentIndex(rightIdx)}
+        aria-label="다음 명함"
       >
         ›
       </button>

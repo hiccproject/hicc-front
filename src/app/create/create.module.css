@@ -1,3 +1,8 @@
+/* src/app/create/create.module.css */
+
+/* =========================
+   Base
+========================= */
 .bg {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fb 0%, #f3f6fb 45%, #eef2f8 100%);
@@ -23,6 +28,9 @@
   }
 }
 
+/* =========================
+   Layout
+========================= */
 .body {
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -31,6 +39,30 @@
   margin-top: 34px;
 }
 
+/* edit mode 단일 화면 */
+.bodySingle {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.contentEdit {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  transform: translateX(70px);
+}
+
+/* =========================
+   Desktop Stepper (세로)
+========================= */
 .stepper {
   position: relative;
   padding-left: 24px;
@@ -86,12 +118,34 @@
   font-weight: 500;
 }
 
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+/* =========================
+   Mobile Stepper (가로 진행바)
+========================= */
+.mobileStepper {
+  display: none;
 }
 
+.mobileProgress {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.mobileProgressSeg {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: #d5d9e0;
+}
+
+.mobileProgressSegActive {
+  background: #6f80ff;
+}
+
+/* =========================
+   Step Header
+========================= */
 .stepHeader {
   display: flex;
   flex-direction: column;
@@ -110,10 +164,22 @@
   color: #1f1f1f;
 }
 
+/* =========================
+   Common Panels / Forms
+========================= */
 .stepPanel {
   display: flex;
   align-items: center;
   gap: 24px;
+}
+
+.stepPanelColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.step2Panel {
+  align-items: flex-start;
 }
 
 .profileCard {
@@ -192,21 +258,22 @@
   flex-direction: column;
   gap: 12px;
 }
-
-.stepPanelColumn {
+.fieldGroup {
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
-
-.step2Panel {
-  align-items: flex-start;
+.fieldLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2b2b2b;
+  letter-spacing: -0.01em;
 }
 
 .textInputWide {
   width: min(620px, 100%);
 }
-
 
 .step2FormStack {
   width: min(445px, 100%);
@@ -251,25 +318,9 @@
   color: #4b4b4b;
 }
 
-.selectArrow {
-  font-size: 12px;
-}
-
-.textInput {
-  height: 38px;
-  border-radius: 8px;
-  border: 1px solid #e1e1e1;
-  padding: 0 14px;
-  min-width: 220px;
-  font-size: 13px;
-  color: #2c2c2c;
-  background: #ffffff;
-}
-
-.textInput::placeholder {
-  color: #b0b0b0;
-}
-
+/* =========================
+   Step 3: Project
+========================= */
 .projectPanel {
   display: grid;
   grid-template-columns: 280px 280px;
@@ -284,6 +335,16 @@
   flex-direction: column;
   gap: 10px;
   background: #ffffff;
+}
+
+.deleteProjectButton {
+  width: 30px;
+  height: 30px;
+  align-self: flex-end;
+  border: none;
+  border-radius: 50%;
+  background: #f1f3f5;
+  cursor: pointer;
 }
 
 .projectInput {
@@ -311,17 +372,6 @@
 
 .projectText::placeholder {
   color: #c2c2c2;
-}
-
-.linkButton {
-  height: 34px;
-  border: none;
-  border-radius: 6px;
-  background: #f3f3f3;
-  font-size: 12px;
-  color: #7a7a7a;
-  text-align: left;
-  padding: 0 10px;
 }
 
 .photoDrop {
@@ -406,6 +456,9 @@
   justify-content: center;
 }
 
+/* =========================
+   Step 4: Tags & Bio
+========================= */
 .bioPanel {
   max-width: 520px;
   display: flex;
@@ -413,6 +466,95 @@
   gap: 28px;
 }
 
+.subStepCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subStepHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subStepNumber {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6f80ff;
+}
+
+.subStepTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #1f1f1f;
+}
+
+.tagEditor {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tagInput {
+  flex: 1;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid #e1e1e1;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.tagAddButton {
+  border: 1px solid #d3d8df;
+  border-radius: 999px;
+  height: 38px;
+  padding: 0 14px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagChip {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 13px;
+  background: #f1f4ff;
+  color: #3651c8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bioInput {
+  width: 100%;
+  min-height: 120px;
+  border-radius: 8px;
+  border: 1px solid #e1e1e1;
+  padding: 14px;
+  font-size: 13px;
+  resize: none;
+  color: #2c2c2c;
+}
+
+.bioInput::placeholder {
+  color: #b0b0b0;
+}
+
+/* =========================
+   Step 5: Layout
+========================= */
 .layoutPanel {
   max-width: 720px;
   display: flex;
@@ -486,48 +628,9 @@
   line-height: 1.4;
 }
 
-.subStepCard {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.subStepHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.subStepNumber {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-  color: #6f80ff;
-}
-
-.subStepTitle {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.4;
-  color: #1f1f1f;
-}
-
-.bioInput {
-  width: 100%;
-  min-height: 120px;
-  border-radius: 8px;
-  border: 1px solid #e1e1e1;
-  padding: 14px;
-  font-size: 13px;
-  resize: none;
-  color: #2c2c2c;
-}
-
-.bioInput::placeholder {
-  color: #b0b0b0;
-}
-
+/* =========================
+   Bottom Navigation (buttons)
+========================= */
 .navControls {
   position: absolute;
   bottom: 24px;
@@ -538,6 +641,7 @@
   align-items: center;
 }
 
+/* edit 모드에서만 쓰는 floating */
 .navControlsFloating {
   position: fixed;
   right: 32px;
@@ -570,6 +674,7 @@
   color: #ffffff;
 }
 
+/* edit 모드 버튼(텍스트형) */
 .navButtonDone {
   width: auto;
   height: 48px;
@@ -585,6 +690,18 @@
   cursor: not-allowed;
 }
 
+/* nav button content toggle */
+.navIcon {
+  display: inline-flex;
+}
+
+.navText {
+  display: none;
+}
+
+/* =========================
+   Responsive (기존 960 기준)
+========================= */
 @media (max-width: 960px) {
   .body {
     grid-template-columns: 1fr;
@@ -621,77 +738,7 @@
     right: 16px;
     bottom: 16px;
   }
-}
 
-.tagEditor {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.tagInput {
-  flex: 1;
-  height: 38px;
-  border-radius: 999px;
-  border: 1px solid #e1e1e1;
-  padding: 0 14px;
-  font-size: 13px;
-}
-
-.tagAddButton {
-  border: 1px solid #d3d8df;
-  border-radius: 999px;
-  height: 38px;
-  padding: 0 14px;
-  background: #f3f4f6;
-  color: #6b7280;
-  font-weight: 600;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.tagList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tagChip {
-  border: none;
-  border-radius: 999px;
-  padding: 8px 13px;
-  background: #f1f4ff;
-  color: #3651c8;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.deleteProjectButton {
-  width: 30px;
-  height: 30px;
-  align-self: flex-end;
-  border: none;
-  border-radius: 50%;
-  background: #f1f3f5;
-  cursor: pointer;
-}
-
-.bodySingle {
-  grid-template-columns: 1fr;
-  justify-items: center;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.contentEdit {
-  width: min(760px, 100%);
-  margin: 0 auto;
-  transform: translateX(70px);
-}
-
-@media (max-width: 960px) {
   .bodySingle {
     display: grid;
     justify-items: stretch;
@@ -701,5 +748,176 @@
     width: 100%;
     margin: 0;
     transform: none;
+  }
+}
+
+/* =========================
+   Mobile (<=768) - 스샷 스타일
+========================= */
+@media (max-width: 768px) {
+  .shell {
+    padding: 10px 16px 120px; /* 하단 고정 버튼 공간 */
+  }
+
+  /* 세로/가로 stepper 제거하고 진행바 사용 */
+  .stepper {
+    display: none;
+  }
+
+  .mobileStepper {
+    display: block;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 14px;
+  }
+
+  .content {
+    gap: 18px;
+  }
+
+  .stepNumber {
+    font-size: 26px;
+    font-weight: 800;
+  }
+
+  .stepHeadline {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .stepPanel {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .profileCard {
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .profileName {
+    font-size: 18px;
+  }
+
+  /* select 2개 2열 */
+  .formRow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .selectBox {
+    width: 100%;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .step2FormStack {
+    width: 100%;
+  }
+
+  .step2FormStack .textInputWide {
+    height: 44px;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+
+  /* Project */
+  .projectCard {
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .photoDrop {
+    height: 120px;
+    border-radius: 12px;
+  }
+
+  .projectAdd {
+    min-height: 72px;
+    border-radius: 14px;
+  }
+
+  /* Tag */
+  .tagInput {
+    height: 44px;
+  }
+
+  .tagAddButton {
+    height: 44px;
+    padding: 0 16px;
+    white-space: nowrap;
+  }
+
+  /* Layout preview */
+  .layoutPreviewFrame {
+    height: 420px;
+  }
+
+  /* ✅ 하단 고정 버튼(취소/다음) */
+  .navControls {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    background: rgba(248, 249, 251, 0.92);
+    backdrop-filter: blur(10px);
+    z-index: 60;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .navControlsFloating {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+  }
+
+  .navButton {
+    width: 100%;
+    height: 54px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .navButtonGhost {
+    background: #d7dbe2;
+    border: none;
+    color: #2b2b2b;
+  }
+
+  .navButtonSolid {
+    background: #2f2f2f;
+    color: #ffffff;
+  }
+
+  /* 모바일은 텍스트만 보여주기 */
+  .navIcon {
+    display: none;
+  }
+
+  .navText {
+    display: inline-flex;
+  }
+
+  /* edit 완료 버튼도 모바일에선 동일한 큰 버튼 */
+  .navButtonDone {
+    width: 100%;
+    height: 54px;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: none;
+    font-size: 16px;
   }
 }

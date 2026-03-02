@@ -1,4 +1,4 @@
-/* ... 기존 상단 스타일 (bg, shell, body, pageTitle, form, row, label) 유지 ... */
+
 .bg {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fb 0%, #f3f6fb 45%, #eef2f8 100%);
