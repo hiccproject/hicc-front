@@ -10,20 +10,50 @@ interface CardViewProps {
 const DEFAULT_PROFILE_IMG = "/default-avatar.png";
 
 const MailIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'text-bottom' }}>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginRight: "6px", verticalAlign: "text-bottom" }}
+  >
     <rect width="20" height="16" x="2" y="4" rx="2" />
     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
   </svg>
 );
 
 const PhoneIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'text-bottom' }}>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginRight: "6px", verticalAlign: "text-bottom" }}
+  >
     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
   </svg>
 );
 
 const MapPinIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'text-bottom' }}>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginRight: "6px", verticalAlign: "text-bottom" }}
+  >
     <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
     <circle cx="12" cy="10" r="3" />
   </svg>
@@ -36,15 +66,10 @@ type CardSlide =
 
 function buildSlides(data: PortfolioDetail, canViewStats: boolean): CardSlide[] {
   const slides: CardSlide[] = [{ key: "profile", type: "profile" }];
-
-  if (canViewStats) {
-    slides.push({ key: "stats", type: "stats" });
-  }
-
+  if (canViewStats) slides.push({ key: "stats", type: "stats" });
   data.projects.forEach((project, index) => {
     slides.push({ key: `project-${index}`, type: "project", project });
   });
-
   return slides;
 }
 
@@ -70,6 +95,20 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
   const currentSlide = slides[currentIndex] ?? slides[0];
   const canMove = slideCount > 1;
 
+  const dots = useMemo(() => {
+    const MAX_DOTS = 7;
+    if (slideCount <= MAX_DOTS) return Array.from({ length: slideCount }, (_, i) => i);
+
+    const half = Math.floor(MAX_DOTS / 2);
+    let start = Math.max(0, currentIndex - half);
+    let end = start + MAX_DOTS - 1;
+    if (end >= slideCount - 1) {
+      end = slideCount - 1;
+      start = Math.max(0, end - (MAX_DOTS - 1));
+    }
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+  }, [slideCount, currentIndex]);
+
   const goPrev = () => {
     if (!canMove) return;
     setCurrentIndex((prev) => (prev - 1 + slideCount) % slideCount);
@@ -94,11 +133,8 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
     swipeStartRef.current.active = false;
 
     if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX < 0) {
-        goNext();
-      } else {
-        goPrev();
-      }
+      if (deltaX < 0) goNext();
+      else goPrev();
     }
   };
 
@@ -112,16 +148,16 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
         <img
           src={data.profileImg || DEFAULT_PROFILE_IMG}
           alt={name}
-          className={styles.cardAvatarLarge} 
+          className={styles.cardAvatarLarge}
           onError={(event) => {
             (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
           }}
         />
-        
+
         <div className={styles.cardIdentityColumn}>
           <div className={styles.cardNameRow}>
-             <h2 className={styles.cardName}>{name}</h2>
-             <span className={styles.cardRolePill}>{role}</span>
+            <h2 className={styles.cardName}>{name}</h2>
+            <span className={styles.cardRolePill}>{role}</span>
           </div>
         </div>
       </div>
@@ -130,65 +166,64 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
 
       <div className={styles.cardContactList}>
         <div className={styles.cardContactItem}>
-            <MailIcon /> {data.email}
+          <MailIcon /> {data.email}
         </div>
         {data.phone && (
-            <div className={styles.cardContactItem}>
-                <PhoneIcon /> {data.phone}
-            </div>
+          <div className={styles.cardContactItem}>
+            <PhoneIcon /> {data.phone}
+          </div>
         )}
         {data.location && (
-            <div className={styles.cardContactItem}>
-                <MapPinIcon /> {data.location}
-            </div>
+          <div className={styles.cardContactItem}>
+            <MapPinIcon /> {data.location}
+          </div>
         )}
       </div>
     </>
   );
 
-  const renderStatsSlide = () => {
-    return (
-      <>
-        <div className={styles.cardProfileGroup}>
-          <img
-            src={data.profileImg || DEFAULT_PROFILE_IMG}
-            alt={name}
-            className={styles.cardAvatarLarge} 
-            onError={(event) => {
-              (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
-            }}
-          />
-          <div className={styles.cardIdentityColumn}>
-            <div className={styles.cardNameRow}>
-               <h2 className={styles.cardName}>{name}</h2>
-               <span className={styles.cardRolePill}>{role}</span>
-            </div>
+  const renderStatsSlide = () => (
+    <>
+      <div className={styles.cardProfileGroup}>
+        <img
+          src={data.profileImg || DEFAULT_PROFILE_IMG}
+          alt={name}
+          className={styles.cardAvatarLarge}
+          onError={(event) => {
+            (event.currentTarget as HTMLImageElement).src = DEFAULT_PROFILE_IMG;
+          }}
+        />
+
+        <div className={styles.cardIdentityColumn}>
+          <div className={styles.cardNameRow}>
+            <h2 className={styles.cardName}>{name}</h2>
+            <span className={styles.cardRolePill}>{role}</span>
           </div>
         </div>
+      </div>
 
-        <p className={styles.cardIntro}>{intro}</p>
+      <p className={styles.cardIntro}>{intro}</p>
 
-        <div className={styles.cardChartPanel}>
-          <div className={styles.cardStatsRow}>
-            <div className={styles.cardStatsItem}>
-              <span className={styles.cardStatsLabel}>일일 조회수 :</span>
-              <strong className={styles.cardStatsValue}>
-                {data.todayViewCount ?? 0}
-                <span className={styles.cardStatsUnit}>회</span>
-              </strong>
-            </div>
-            <div className={styles.cardStatsItem}>
-              <span className={styles.cardStatsLabel}>전체 조회수 :</span>
-              <strong className={styles.cardStatsValue}>
-                {data.totalViewCount ?? 0}
-                <span className={styles.cardStatsUnit}>회</span>
-              </strong>
-            </div>
+      <div className={styles.cardChartPanel}>
+        <div className={styles.cardStatsRow}>
+          <div className={styles.cardStatsItem}>
+            <span className={styles.cardStatsLabel}>일일 조회수 :</span>
+            <strong className={styles.cardStatsValue}>
+              {data.todayViewCount ?? 0}
+              <span className={styles.cardStatsUnit}>회</span>
+            </strong>
+          </div>
+          <div className={styles.cardStatsItem}>
+            <span className={styles.cardStatsLabel}>전체 조회수 :</span>
+            <strong className={styles.cardStatsValue}>
+              {data.totalViewCount ?? 0}
+              <span className={styles.cardStatsUnit}>회</span>
+            </strong>
           </div>
         </div>
-      </>
-    );
-  };
+      </div>
+    </>
+  );
 
   const renderProjectSlide = (project: Project) => {
     const title = safeText(project.title, "프로젝트");
@@ -224,6 +259,7 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
 
   return (
     <div className={styles.cardStage}>
+      {/* 데스크탑용 좌측 화살표 */}
       <button
         type="button"
         className={`${styles.carouselArrow} ${!canMove ? styles.cardArrowHidden : ""}`}
@@ -248,6 +284,39 @@ export default function CardView({ data, canViewStats = false }: CardViewProps) 
         {currentSlide.type === "project" && renderProjectSlide(currentSlide.project)}
       </section>
 
+      {/* ✅ 모바일 하단 페이지네이션 */}
+      <div className={styles.mobilePager} aria-label="카드 페이지 이동">
+        <button
+          type="button"
+          className={styles.mobilePagerArrow}
+          onClick={goPrev}
+          disabled={!canMove}
+          aria-label="이전 카드"
+        >
+          ‹
+        </button>
+
+        <div className={styles.mobilePagerDots} aria-hidden="true">
+          {dots.map((i) => (
+            <span
+              key={i}
+              className={`${styles.mobilePagerDot} ${i === currentIndex ? styles.mobilePagerDotActive : ""}`}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className={styles.mobilePagerArrow}
+          onClick={goNext}
+          disabled={!canMove}
+          aria-label="다음 카드"
+        >
+          ›
+        </button>
+      </div>
+
+      {/* 데스크탑용 우측 화살표 */}
       <button
         type="button"
         className={`${styles.carouselArrow} ${!canMove ? styles.cardArrowHidden : ""}`}

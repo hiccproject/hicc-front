@@ -40,6 +40,7 @@
 
 "use client";
 
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
@@ -111,7 +112,11 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
     label: "IT·개발",
     jobs: ["백엔드", "프론트엔드", "풀스택", "모바일", "DevOps", "데이터 엔지니어"],
   },
-  { value: "DESIGN", label: "디자인", jobs: ["UX/UI 디자이너", "프로덕트 디자이너", "BX/브랜딩", "그래픽 디자이너"] },
+  {
+    value: "DESIGN",
+    label: "디자인",
+    jobs: ["UX/UI 디자이너", "프로덕트 디자이너", "BX/브랜딩", "그래픽 디자이너"],
+  },
   { value: "MARKETING", label: "마케팅·광고", jobs: ["퍼포먼스 마케터", "콘텐츠 마케터", "CRM 마케터"] },
   { value: "PLANNING", label: "기획·전략", jobs: ["서비스 기획", "PM", "사업 기획", "전략 기획"] },
   { value: "BUSINESS", label: "영업·고객상담", jobs: ["B2B 영업", "B2C 영업", "고객상담", "CS 매니저"] },
@@ -168,9 +173,6 @@ const PREVIEW_PORTFOLIO: PortfolioDetail = {
 };
 
 // 업로드 응답을 실제 img src로 정규화
-// - URL이면 그대로 사용
-// - 텍스트에 URL이 섞여 있으면 추출
-// - 키만 있으면 S3_BASE_URL과 조합
 function normalizeImageSrc(payload: UploadImageResponse): string {
   if (!payload) return "";
 
@@ -208,8 +210,10 @@ function getJobsByCategory(category: PortfolioCategory) {
   return CATEGORY_OPTIONS.find((option) => option.value === category)?.jobs ?? ["기타"];
 }
 
+// 모바일 edit 탭
+type EditTab = "INFO" | "PROJECT" | "BIO" | "DESIGN";
+
 export default function CreatePage() {
-  // 개발 환경에서만 페이지 로드 로그를 찍어 디버깅을 쉽게 함
   if (process.env.NODE_ENV !== "production") {
     console.log("CREATE PAGE LOADED - 2026-02-06 v2");
   }
@@ -217,34 +221,19 @@ export default function CreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // step: 현재 진행 단계(신규 생성 모드에서만 의미가 큼)
   const [step, setStep] = useState<Step>(1);
-
-  // portfolioId: Step 1 저장 시 서버에서 생성되는 명함 ID
-  // 이후 단계 저장/수정에서 반드시 필요
   const [portfolioId, setPortfolioId] = useState<number | null>(null);
 
-  // 저장/로딩 상태 플래그들
   const [isSaving, setIsSaving] = useState(false);
   const [isHydrating, setIsHydrating] = useState(false);
   const [isProfileUploading, setIsProfileUploading] = useState(false);
 
-  // profilePreview: 프로필 이미지 미리보기(로컬 blob 또는 업로드 URL)
   const [profilePreview, setProfilePreview] = useState<string>(DEFAULT_PROFILE_IMG);
-
-  // profileName: 화면 상단 프로필 카드에 표시할 이름(로그인 프로필에서 가져옴)
   const [profileName, setProfileName] = useState("회원");
 
-  // 태그 입력 인풋 상태
   const [tagInput, setTagInput] = useState("");
-
-  // 프로젝트 이미지 미리보기 배열
-  // - formData.projects[i].projectImg 값과 같이 움직이되,
-  //   업로드 직후 blob preview를 보여주는 목적도 있음
   const [projectImagePreviews, setProjectImagePreviews] = useState<string[]>([""]);
 
-  // formData: 생성/수정 폼의 단일 소스 오브 트루스
-  // - step별로 일부 필드만 저장하지만, 전체를 한 곳에 보관
   const [formData, setFormData] = useState<PortfolioData>({
     category: "DEVELOPMENT",
     subCategory: "백엔드",
@@ -258,14 +247,26 @@ export default function CreatePage() {
     layoutType: "CARD",
   });
 
-  // edit 모드: ?mode=edit 로 진입
   const isEditMode = searchParams.get("mode") === "edit";
-
-  // requestedStep: 쿼리로 step을 강제할 수 있음(?step=3 등)
   const requestedStep = Number(searchParams.get("step") || "1");
 
-  // 쿼리에서 portfolioId/step을 읽어 초기 상태를 맞춤
-  // - 수정 모드에서 특정 step부터 진입시키거나, 포트폴리오를 지정할 수 있음
+  // ✅ 모바일/탭 상태
+  const [editTab, setEditTab] = useState<EditTab>("INFO");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (isEditMode) setEditTab("INFO");
+  }, [isEditMode]);
+
   useEffect(() => {
     const qsPortfolioId = Number(searchParams.get("portfolioId") || "0");
     const normalizedStep =
@@ -277,9 +278,7 @@ export default function CreatePage() {
     }
   }, [requestedStep, searchParams]);
 
-  // 수정 모드일 때 기존 명함 데이터를 불러와 폼을 채움
-  // - portfolioId → shareLink(slug) → detail 조회 순서
-  // - 프로젝트 이미지는 서버 값 + 로컬 캐시를 index 기준으로 병합
+  // 수정 모드 하이드레이션
   useEffect(() => {
     const loadPortfolioDetail = async () => {
       if (!portfolioId || !isEditMode) return;
@@ -297,12 +296,11 @@ export default function CreatePage() {
         const detail = response?.data;
         if (!detail) return;
 
-        // 로컬에 임시 저장된 프로젝트 이미지가 있으면 우선 병합
         const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
 
         const mergedProjects =
           detail.projects && detail.projects.length > 0
-            ? detail.projects.map((project, index) => ({
+            ? detail.projects.map((project: any, index: number) => ({
                 projectName: project.projectName || "",
                 projectSummary: project.projectSummary || "",
                 projectLink: project.projectLink || "",
@@ -310,7 +308,6 @@ export default function CreatePage() {
               }))
             : null;
 
-        // 서버 값으로 폼 데이터 하이드레이션
         setFormData((prev) => ({
           ...prev,
           category: detail.category || prev.category,
@@ -325,7 +322,6 @@ export default function CreatePage() {
           layoutType: detail.layoutType || prev.layoutType,
         }));
 
-        // 프로필 이미지는 서버 값이 없을 때 로컬 캐시로 보강
         const fallbackProfileImg = portfolioId ? getPortfolioProfileImage(portfolioId) : "";
         const resolvedProfileImg = detail.profileImg || fallbackProfileImg || "";
         if (resolvedProfileImg) {
@@ -333,10 +329,8 @@ export default function CreatePage() {
           setFormData((prev) => ({ ...prev, profileImg: resolvedProfileImg }));
         }
 
-        // 병합된 프로젝트 이미지들을 로컬 캐시에도 다시 저장해둬서
-        // 새로고침/재진입 시 동일하게 복원되도록 함
         if (portfolioId && mergedProjects) {
-          const nextImages = mergedProjects.map((project) => project.projectImg || "");
+          const nextImages = mergedProjects.map((project: any) => project.projectImg || "");
           setPortfolioProjectImages(portfolioId, nextImages);
         }
       } catch (error) {
@@ -350,8 +344,7 @@ export default function CreatePage() {
     loadPortfolioDetail();
   }, [isEditMode, portfolioId]);
 
-  // 로그인 프로필에서 이름을 가져와 프로필 카드에 표시
-  // - "회원" 대신 실제 이름이 있으면 반영
+  // 로그인 프로필 이름
   useEffect(() => {
     const profile = getStoredProfile();
     if (profile?.name?.trim()) {
@@ -359,17 +352,16 @@ export default function CreatePage() {
     }
   }, []);
 
-  // formData.projects의 projectImg 변화에 따라 미리보기 배열을 동기화
-  // - 서버 하이드레이션/업로드 후에도 UI 미리보기가 맞도록 유지
+  // 프로젝트 미리보기 sync
   useEffect(() => {
     setProjectImagePreviews((prev) => {
-      const next = formData.projects.map((project, index) => project.projectImg || prev[index] || "");
+      const next = formData.projects.map(
+        (project, index) => project.projectImg || prev[index] || ""
+      );
       return next.length > 0 ? next : [""];
     });
   }, [formData.projects]);
 
-  // 공용 input/textarea/select 변경 핸들러
-  // - name 속성에 맞춰 formData의 같은 키를 업데이트
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -377,8 +369,6 @@ export default function CreatePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 카테고리 변경 시 해당 카테고리의 첫 직무를 기본 선택으로 맞춤
-  // - 서브카테고리 옵션이 카테고리에 종속되어 있으므로 같이 업데이트
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const nextCategory = e.target.value as PortfolioCategory;
     const nextJobs = getJobsByCategory(nextCategory);
@@ -390,16 +380,12 @@ export default function CreatePage() {
     }));
   };
 
-  // 프로젝트 필드 업데이트(배열 인덱스 기반)
   const handleProjectChange = (index: number, field: string, value: string) => {
     const newProjects = [...formData.projects];
     newProjects[index] = { ...newProjects[index], [field]: value };
     setFormData((prev) => ({ ...prev, projects: newProjects }));
   };
 
-  // 프로필 이미지 업로드
-  // - blob preview를 먼저 보여주고, 업로드 성공 시 URL로 교체
-  // - portfolioId가 있으면 로컬 캐시에도 저장하여 새로고침 시 복원 가능
   const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -427,10 +413,6 @@ export default function CreatePage() {
     }
   };
 
-  // 태그 추가
-  // - 공백 제거 후 빈 값은 무시
-  // - 최대 5개 제한
-  // - 중복 태그는 무시
   const addTag = () => {
     const normalized = tagInput.trim();
     if (!normalized) return;
@@ -449,24 +431,21 @@ export default function CreatePage() {
     setTagInput("");
   };
 
-  // 태그 삭제
   const removeTag = (tag: string) => {
     setFormData((prev) => ({ ...prev, tags: (prev.tags || []).filter((item) => item !== tag) }));
   };
 
-  // 프로젝트 추가
-  // - 빈 프로젝트 한 개를 추가하고, 미리보기 배열도 동일하게 확장
   const addProject = () => {
     setFormData((prev) => ({
       ...prev,
-      projects: [...prev.projects, { projectName: "", projectSummary: "", projectLink: "", projectImg: "" }],
+      projects: [
+        ...prev.projects,
+        { projectName: "", projectSummary: "", projectLink: "", projectImg: "" },
+      ],
     }));
     setProjectImagePreviews((prev) => [...prev, ""]);
   };
 
-  // 프로젝트 삭제
-  // - 최소 1개는 유지(전체 삭제 방지)
-  // - portfolioId가 있으면 로컬 캐시에서도 해당 인덱스 제거
   const removeProject = (index: number) => {
     setFormData((prev) => {
       if (prev.projects.length === 1) return prev;
@@ -483,8 +462,6 @@ export default function CreatePage() {
     }
   };
 
-  // projectLink는 여러 개를 \n으로 저장하는 구조
-  // - UI에서는 배열처럼 다루고, 저장 시 다시 문자열로 합침
   const getProjectLinks = (projectLink?: string) => {
     if (projectLink === undefined || projectLink === null || projectLink === "") {
       return [""];
@@ -520,9 +497,6 @@ export default function CreatePage() {
     updateProjectLinks(projectIndex, nextLinks);
   };
 
-  // 프로젝트 이미지 업로드
-  // - 선택 직후 blob preview 표시 → 업로드 성공 시 URL 반영
-  // - portfolioId가 있으면 로컬 캐시에도 저장
   const handleProjectImageChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -560,10 +534,6 @@ export default function CreatePage() {
     }
   };
 
-  // 저장 payload로 변환할 프로젝트 목록 생성
-  // - 링크는 개행 기준 문자열로 저장하되, 공백/빈 줄을 정리
-  // - 프로젝트가 완전히 비어있으면 payload에서 제외(불필요한 빈 프로젝트 저장 방지)
-  // - 이미지 URL이 비어있으면 로컬 캐시에서 보강
   const buildProjectPayloads = () => {
     const localProjectImages = portfolioId ? getPortfolioProjectImages(portfolioId) : [];
 
@@ -583,24 +553,18 @@ export default function CreatePage() {
       .filter((project) => {
         return Boolean(
           project.projectName?.trim() ||
-          project.projectSummary?.trim() ||
-          project.projectLink?.trim() ||
-          project.projectImg?.trim()
+            project.projectSummary?.trim() ||
+            project.projectLink?.trim() ||
+            project.projectImg?.trim()
         );
       });
   };
 
-  // 이메일 유효성 검사(간단 정규식)
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-  // 다음 단계 저장 및 이동
-  // - step별로 body를 다르게 만들어 savePortfolioStep 호출
-  // - step 1에서 portfolioId가 생성되면 상태에 저장
-  // - 수정 모드에서 step 1 저장을 누르면 2~5까지 한 번에 저장하고 종료
   const handleNext = async () => {
     if (isSaving) return;
 
-    // 프로필 업로드 중에는 profileImg가 확정되지 않을 수 있으므로 이동을 막음
     if (isProfileUploading) {
       alert("프로필 이미지 업로드 중입니다. 업로드 완료 후 다시 시도해주세요.");
       return;
@@ -615,7 +579,6 @@ export default function CreatePage() {
 
       let body = {};
 
-      // 단계별 payload 구성
       if (step === 1) {
         body = {
           category: formData.category,
@@ -625,7 +588,6 @@ export default function CreatePage() {
       } else if (step === 2) {
         const normalizedEmail = formData.email.trim();
 
-        // 이메일은 필수
         if (!normalizedEmail) {
           alert("이메일은 필수 입력 항목입니다.");
           return;
@@ -660,23 +622,18 @@ export default function CreatePage() {
         console.log("PAGE body", body);
       }
 
-      // step 저장 API 호출
       const res = await savePortfolioStep(step, body, portfolioId);
 
-      // Step 1에서 서버가 생성한 portfolioId를 반환하면 저장
       let nextPortfolioId = portfolioId;
       if (step === 1 && res.data) {
         nextPortfolioId = res.data;
         setPortfolioId(res.data);
 
-        // Step 1에서 선택한 프로필 이미지를 로컬 캐시에 저장
         if (formData.profileImg) {
           setPortfolioProfileImage(res.data, formData.profileImg);
         }
       }
 
-      // 수정 모드: step1 버튼을 "전체 수정 완료"로 사용
-      // - 2~5를 순차적으로 저장하고 /cards로 이동
       if (isEditMode && nextPortfolioId) {
         if (step === 1) {
           if (!formData.email.trim()) {
@@ -723,12 +680,10 @@ export default function CreatePage() {
         }
       }
 
-      // 신규 생성: 다음 스텝으로 이동
       if (step < 5) {
         setStep((prev) => (prev + 1) as Step);
         window.scrollTo(0, 0);
       } else {
-        // 마지막 단계 저장 완료 → 발행 완료 처리
         if (!nextPortfolioId) {
           throw new Error("명함 ID가 없습니다.");
         }
@@ -743,10 +698,11 @@ export default function CreatePage() {
     }
   };
 
-  // UI 보조 계산들
-  // - edit 모드에서는 Stepper 대신 "한 번에 수정" 형태로 문구를 바꿈
   const stepHeadline = useMemo(
-    () => (isEditMode ? "명함 정보를 한 번에 수정해주세요" : steps.find((s) => s.id === step)?.headline ?? ""),
+    () =>
+      isEditMode
+        ? "명함 정보를 한 번에 수정해주세요"
+        : steps.find((s) => s.id === step)?.headline ?? "",
     [isEditMode, step]
   );
 
@@ -755,13 +711,11 @@ export default function CreatePage() {
     [isEditMode, step]
   );
 
-  // 신규 생성일 때만 이전 버튼 활성화(수정 모드는 단일 완료 버튼만 사용)
-  const canGoPrev = step > 1 && !isEditMode;
+  const subCategoryOptions = useMemo(
+    () => getJobsByCategory(formData.category),
+    [formData.category]
+  );
 
-  // subCategory 옵션은 category에 종속
-  const subCategoryOptions = useMemo(() => getJobsByCategory(formData.category), [formData.category]);
-
-  // 프로필 카드 UI(여러 step에서 반복 사용)
   const profileEditor = (
     <div className={styles.profileCard}>
       <label className={styles.avatar}>
@@ -792,17 +746,44 @@ export default function CreatePage() {
       </div>
 
       <main className={`${styles.shell} ${isEditMode ? styles.shellEdit : ""}`}>
+        {/* ✅ 모바일 수정 모드: 상단 탭 */}
+        {isEditMode && isMobile && (
+          <div className={styles.editTabs} role="tablist" aria-label="모바일 수정 탭">
+            {[
+              { key: "INFO", label: "정보" },
+              { key: "PROJECT", label: "프로젝트" },
+              { key: "BIO", label: "태그/소개" },
+              { key: "DESIGN", label: "디자인" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={editTab === (t.key as EditTab)}
+                className={`${styles.editTab} ${
+                  editTab === (t.key as EditTab) ? styles.editTabActive : ""
+                }`}
+                onClick={() => setEditTab(t.key as EditTab)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <section className={`${styles.body} ${isEditMode ? styles.bodySingle : ""}`}>
           {/* 신규 생성 모드에서만 Stepper 표시 */}
           {!isEditMode && (
-             <>
+            <>
               {/* 모바일 전용: 상단 가로 진행바 */}
               <div className={styles.mobileStepper} aria-label="생성 진행 단계">
                 <div className={styles.mobileProgress}>
                   {steps.map((s) => (
                     <div
                       key={s.id}
-                      className={`${styles.mobileProgressSeg} ${s.id <= step ? styles.mobileProgressSegActive : ""}`}
+                      className={`${styles.mobileProgressSeg} ${
+                        s.id <= step ? styles.mobileProgressSegActive : ""
+                      }`}
                     />
                   ))}
                 </div>
@@ -813,7 +794,11 @@ export default function CreatePage() {
                 <div className={styles.stepLine} />
                 {steps.map((item) => (
                   <div key={item.id} className={styles.stepItem}>
-                    <div className={`${styles.stepDot} ${item.id === step ? styles.stepDotActive : ""}`} />
+                    <div
+                      className={`${styles.stepDot} ${
+                        item.id === step ? styles.stepDotActive : ""
+                      }`}
+                    />
                     <div className={styles.stepText}>
                       <span className={styles.stepTitle}>STEP 0{item.id}</span>
                       <span className={styles.stepLabel}>{item.label}</span>
@@ -867,27 +852,68 @@ export default function CreatePage() {
               </div>
             )}
 
-            {/* Step 2: 추가 정보 입력(신규 step2 + 수정 모드에서 항상 노출) */}
-            {(step === 2 || isEditMode) && (
+            {/* Step 2: 추가 정보 입력(신규 step2 + 수정 모드) */}
+            {(step === 2 || (isEditMode && (!isMobile || editTab === "INFO"))) && (
               <div className={styles.stepPanelColumn}>
-                {isEditMode && (
+                {isEditMode && !isMobile && (
                   <div className={`${styles.stepHeader} ${styles.stepHeaderEdit}`}>
                     <span className={styles.stepNumber}>01</span>
                     <h2 className={styles.stepHeadline}>추가 정보를 입력해주세요</h2>
                   </div>
                 )}
 
-                {/* ✅ Step2에서는 profileEditor/직군선택 UI 제거 */}
+                {/* ✅ 수정+모바일(INFO 탭): 스샷처럼 프로필/이름/직군도 위에 */}
+                {isEditMode && isMobile && (
+                  <div className={styles.editInfoTop}>
+                    {profileEditor}
+
+                    <input
+                      className={styles.editNameInput}
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="이름"
+                    />
+
+                    <div className={styles.formRow}>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleCategoryChange}
+                        className={styles.selectBox}
+                      >
+                        {CATEGORY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        name="subCategory"
+                        value={formData.subCategory}
+                        onChange={handleChange}
+                        className={styles.selectBox}
+                      >
+                        {subCategoryOptions.map((job) => (
+                          <option key={job} value={job}>
+                            {job}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 <div className={`${styles.stepPanel} ${styles.step2Panel}`}>
                   <div className={`${styles.formStack} ${styles.step2FormStack}`}>
                     <div className={styles.fieldGroup}>
-                      <div className={styles.fieldLabel}>이메일 (필수)</div>
+                      <div className={styles.fieldLabel}>이메일</div>
                       <input
                         name="email"
                         className={styles.textInputWide}
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder=""  // 스샷처럼 라벨이 위에 있으니 비워도 됨
+                        placeholder=""
                       />
                     </div>
 
@@ -918,9 +944,9 @@ export default function CreatePage() {
             )}
 
             {/* Step 3: 프로젝트 첨부 */}
-            {(step === 3 || isEditMode) && (
+            {(step === 3 || (isEditMode && (!isMobile || editTab === "PROJECT"))) && (
               <div className={styles.stepPanelColumn}>
-                {isEditMode && (
+                {isEditMode && !isMobile && (
                   <div className={`${styles.stepHeader} ${styles.stepHeaderEdit}`}>
                     <span className={styles.stepNumber}>02</span>
                     <h2 className={styles.stepHeadline}>프로젝트를 첨부해주세요</h2>
@@ -930,7 +956,6 @@ export default function CreatePage() {
                 <div className={styles.projectPanel}>
                   {formData.projects.map((proj, idx) => (
                     <div key={idx} className={styles.projectCard}>
-                      {/* 최소 1개 유지 정책 때문에 removeProject 내부에서 방어 */}
                       <button
                         className={styles.deleteProjectButton}
                         type="button"
@@ -953,7 +978,6 @@ export default function CreatePage() {
                         onChange={(e) => handleProjectChange(idx, "projectSummary", e.target.value)}
                       />
 
-                      {/* 프로젝트 이미지 업로드 */}
                       <label className={styles.photoDrop}>
                         <input
                           type="file"
@@ -976,7 +1000,6 @@ export default function CreatePage() {
                         )}
                       </label>
 
-                      {/* 프로젝트 링크 입력(여러 줄) */}
                       <div className={styles.projectLinksWrap}>
                         {getProjectLinks(proj.projectLink).map((link, linkIdx) => (
                           <div key={`${idx}-${linkIdx}`} className={styles.projectLinkRow}>
@@ -984,7 +1007,9 @@ export default function CreatePage() {
                               className={styles.projectLinkInput}
                               placeholder="링크를 붙여넣어 주세요."
                               value={link}
-                              onChange={(e) => handleProjectLinkChange(idx, linkIdx, e.target.value)}
+                              onChange={(e) =>
+                                handleProjectLinkChange(idx, linkIdx, e.target.value)
+                              }
                             />
 
                             <button
@@ -1020,12 +1045,14 @@ export default function CreatePage() {
             )}
 
             {/* Step 4: 태그/소개글 */}
-            {(step === 4 || isEditMode) && (
+            {(step === 4 || (isEditMode && (!isMobile || editTab === "BIO"))) && (
               <div className={styles.bioPanel}>
                 <section className={styles.subStepCard}>
                   <div className={styles.subStepHeader}>
                     <span className={styles.subStepNumber}>{isEditMode ? "03" : "04-1"}</span>
-                    <h3 className={styles.subStepTitle}>명함에 표시될 태그를 생성해주세요 (최대 5개)</h3>
+                    <h3 className={styles.subStepTitle}>
+                      명함에 표시될 태그를 생성해주세요 (최대 5개)
+                    </h3>
                   </div>
 
                   <div className={styles.tagEditor}>
@@ -1079,9 +1106,9 @@ export default function CreatePage() {
             )}
 
             {/* Step 5: 레이아웃 선택 */}
-            {(step === 5 || isEditMode) && (
+            {(step === 5 || (isEditMode && (!isMobile || editTab === "DESIGN"))) && (
               <div className={styles.layoutPanel}>
-                {isEditMode && (
+                {isEditMode && !isMobile && (
                   <div className={`${styles.stepHeader} ${styles.stepHeaderEdit}`}>
                     <span className={styles.stepNumber}>05</span>
                     <h2 className={styles.stepHeadline}>명함 디자인을 선택해주세요 (예시 이미지)</h2>
@@ -1096,7 +1123,6 @@ export default function CreatePage() {
                   ].map((option) => {
                     const isSelected = formData.layoutType === option.value;
 
-                    // 각 레이아웃별 예시 프리뷰를 렌더링
                     const preview =
                       option.value === "CARD" ? (
                         <CardView data={PREVIEW_PORTFOLIO} canViewStats={false} />
@@ -1109,7 +1135,9 @@ export default function CreatePage() {
                     return (
                       <div
                         key={option.value}
-                        className={`${styles.layoutOption} ${isSelected ? styles.layoutOptionActive : ""}`}
+                        className={`${styles.layoutOption} ${
+                          isSelected ? styles.layoutOptionActive : ""
+                        }`}
                         onPointerDown={(e) => {
                           e.preventDefault();
                           setFormData((prev) => ({
@@ -1145,14 +1173,15 @@ export default function CreatePage() {
           </div>
         </section>
 
-        {/* 하단 네비게이션 버튼(신규 생성: 이전/다음, 수정: 완료) */}
+        {/* 하단 네비게이션 버튼 */}
         <div className={`${styles.navControls} ${isEditMode ? styles.navControlsFloating : ""}`}>
-          {!isEditMode ? (
+          {/* 신규 생성 모드 */}
+          {!isEditMode && (
             <button
               className={`${styles.navButton} ${styles.navButtonGhost} ${styles.navButtonWide}`}
               type="button"
               onClick={() => {
-                if (step === 1) router.push("/"); // ✅ 모바일 스샷처럼 "취소" 느낌
+                if (step === 1) router.push("/");
                 else setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev));
               }}
               disabled={isSaving || isHydrating}
@@ -1160,8 +1189,21 @@ export default function CreatePage() {
               <span className={styles.navIcon}>←</span>
               <span className={styles.navText}>{step === 1 ? "취소" : "이전"}</span>
             </button>
-          ) : null}
+          )}
 
+          {/* ✅ 수정 모드 + 모바일: 취소 버튼 추가 */}
+          {isEditMode && isMobile && (
+            <button
+              className={`${styles.navButton} ${styles.navButtonGhost} ${styles.navButtonWide}`}
+              type="button"
+              onClick={() => router.push("/cards")}
+              disabled={isSaving || isHydrating}
+            >
+              <span className={styles.navText}>취소</span>
+            </button>
+          )}
+
+          {/* 공통: 다음/완료 */}
           <button
             className={`${styles.navButton} ${styles.navButtonSolid} ${styles.navButtonWide} ${
               isEditMode ? styles.navButtonDone : ""
@@ -1174,7 +1216,7 @@ export default function CreatePage() {
               {isSaving || isHydrating ? "" : isEditMode ? "✓" : step === 5 ? "✓" : "→"}
             </span>
             <span className={styles.navText}>
-              {isSaving || isHydrating ? "저장 중..." : isEditMode ? "수정 완료" : step === 5 ? "완료" : "다음"}
+              {isSaving || isHydrating ? "저장 중..." : isEditMode ? "완료" : step === 5 ? "완료" : "다음"}
             </span>
           </button>
         </div>

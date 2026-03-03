@@ -316,7 +316,7 @@ export default function PortfolioPage() {
   };
 
   return (
-    <div className={styles.fullScreenContainer}>
+    <div className={styles.fullScreenContainer} data-layout={effectiveLayout}>
       <div className={styles.headerContainer}>
         <Header />
       </div>
