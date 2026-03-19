@@ -263,13 +263,13 @@ export default function CardsPage() {
 
             const nextStep = item.lastStep || 1;
 
-            // ✅ slug 기반 상세 링크
+            // ✅ 상세 페이지는 query 기반 라우트(/portfolio?slug=...)를 사용
             // - 작성 중이면 create로 이동
-            // - 작성 완료면 slug가 있으면 /portfolio/${slug}로 이동
-            // - slug가 없으면 안전하게 기존 id 링크로 fallback
+            // - 작성 완료면 slug가 있으면 slug query로 이동
+            // - slug가 없으면 id query로 fallback
             const slug = shareSlugMap[item.id];
             const portfolioDetailLink = slug
-              ? `/portfolio/${slug}` // ✅ 너희 라우트가 query 기반이면: `/portfolio?slug=${slug}`
+              ? `/portfolio?slug=${encodeURIComponent(slug)}`
               : `/portfolio?id=${item.id}`;
 
             const cardLink =

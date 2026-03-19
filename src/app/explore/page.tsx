@@ -64,6 +64,9 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "OLDEST", label: "등록순" },
 ];
 
+const INACTIVE_ICON_COLOR = "#B5BDCA";
+const ACTIVE_ICON_COLOR = "#4B71EF";
+
 function formatUpdatedDate(value: string) {
   if (!value) return "";
   const date = new Date(value);
@@ -86,6 +89,40 @@ function truncateIntro(value: string, maxLength = 40) {
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}...` : trimmed;
 }
 
+function HeartIcon({ active }: { active: boolean }) {
+  const color = active ? ACTIVE_ICON_COLOR : INACTIVE_ICON_COLOR;
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.actionIcon}>
+      <path
+        d="M12 20.5 4.95 13.8a4.96 4.96 0 0 1 0-7.11 4.9 4.9 0 0 1 6.96 0L12 7l.09-.31a4.9 4.9 0 0 1 6.96 0 4.96 4.96 0 0 1 0 7.11L12 20.5Z"
+        fill={active ? color : "none"}
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BookmarkIcon({ active }: { active: boolean }) {
+  const color = active ? ACTIVE_ICON_COLOR : INACTIVE_ICON_COLOR;
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.actionIcon}>
+      <path
+        d="M7 4.75h10A1.25 1.25 0 0 1 18.25 6v13.07a.2.2 0 0 1-.32.16L12 14.82l-5.93 4.41a.2.2 0 0 1-.32-.16V6A1.25 1.25 0 0 1 7 4.75Z"
+        fill={active ? color : "none"}
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function ExplorePage() {
   const [items, setItems] = useState<PortfolioListItem[]>([]);
   const [page, setPage] = useState(0);
@@ -99,6 +136,8 @@ export default function ExplorePage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [sort, setSort] = useState<SortKey>("REALTIME");
+  const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
+  const [scrappedItems, setScrappedItems] = useState<Record<string, boolean>>({});
 
   const activeCategoryLabels = useMemo(() => {
     return CATEGORY_OPTIONS.filter((option) => selectedCategories.includes(option.value)).map(
@@ -229,6 +268,16 @@ export default function ExplorePage() {
     };
   }, [page, totalPages]);
 
+  const toggleReaction = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    key: string,
+    setter: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setter((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.headerWrap}>
@@ -307,11 +356,33 @@ export default function ExplorePage() {
             const intro = truncateIntro(item.summaryIntro ?? item.intro ?? "");
             const updatedDate = formatUpdatedDate(item.updatedAt);
             const link = item.slug ? `/portfolio?slug=${encodeURIComponent(item.slug)}` : null;
-            const cardBody = (
-              <article
-                className={`${styles.card} ${!item.slug ? styles.cardDisabled : ""}`}
-                key={`${item.slug ?? "empty"}-${index}`}
-              >
+            const actionKey = item.slug ?? `empty-${index}`;
+            const isLiked = Boolean(likedItems[actionKey]);
+            const isScrapped = Boolean(scrappedItems[actionKey]);
+            const cardActions = (
+              <div className={styles.cardActions}>
+                <button
+                  type="button"
+                  className={`${styles.actionButton} ${isLiked ? styles.actionButtonActive : ""}`}
+                  aria-label={isLiked ? "좋아요 취소" : "좋아요"}
+                  aria-pressed={isLiked}
+                  onClick={(event) => toggleReaction(event, actionKey, setLikedItems)}
+                >
+                  <HeartIcon active={isLiked} />
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.actionButton} ${isScrapped ? styles.actionButtonActive : ""}`}
+                  aria-label={isScrapped ? "스크랩 취소" : "스크랩"}
+                  aria-pressed={isScrapped}
+                  onClick={(event) => toggleReaction(event, actionKey, setScrappedItems)}
+                >
+                  <BookmarkIcon active={isScrapped} />
+                </button>
+              </div>
+            );
+            const cardArticle = (
+              <article className={`${styles.card} ${!item.slug ? styles.cardDisabled : ""}`}>
                 <div className={styles.avatar}>
                   <img
                     src={item.profileImg || DEFAULT_PROFILE_IMG}
@@ -340,12 +411,16 @@ export default function ExplorePage() {
             );
 
             return link ? (
-              <Link key={`${item.slug}-${index}`} href={link} className={styles.cardLink}>
-                {cardBody}
-              </Link>
+              <div key={`${item.slug}-${index}`} className={styles.cardShell}>
+                {cardActions}
+                <Link href={link} className={styles.cardLink}>
+                  {cardArticle}
+                </Link>
+              </div>
             ) : (
-              <div key={`empty-${index}`} className={styles.cardLink}>
-                {cardBody}
+              <div key={`empty-${index}`} className={`${styles.cardLink} ${styles.cardShell}`}>
+                {cardActions}
+                {cardArticle}
               </div>
             );
           })}

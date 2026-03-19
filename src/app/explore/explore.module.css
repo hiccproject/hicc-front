@@ -188,7 +188,12 @@
   gap: 20px;
 }
 
+.cardShell {
+  position: relative;
+}
+
 .cardLink {
+  display: block;
   text-decoration: none;
   color: inherit;
 }
@@ -206,6 +211,38 @@
   min-height: 280px;
   position: relative;
   overflow: hidden;
+}
+
+.cardActions {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.actionIcon {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.actionButtonActive {
+  transform: translateY(0);
 }
 
 .card::before {
@@ -384,5 +421,10 @@
   .sortBox {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .cardActions {
+    top: 16px;
+    right: 16px;
   }
 }
