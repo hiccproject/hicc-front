@@ -669,6 +669,97 @@ export async function getPublicPortfolioDetail(slug: string) {
 }
 
 /**
+ * portfolio reactions(좋아요/스크랩)
+ */
+export type PortfolioReactionData = {
+  likeCount: number;
+  scrapCount: number;
+  scraped: boolean;
+  liked: boolean;
+};
+
+export type PortfolioReactionResponse = {
+  code: string;
+  message: string;
+  data?: PortfolioReactionData;
+};
+
+export type PortfolioReactionListItem = {
+  slug: string | null;
+  username?: string | null;
+  profileImg: string | null;
+  categoryTitle: string | null;
+  subCategory: string | null;
+  summaryIntro?: string | null;
+  intro?: string | null;
+  tags?: string[] | null;
+  updatedAt: string;
+  status?: "DRAFT" | "PUBLISHED";
+  isPublic?: boolean;
+  liked?: boolean;
+  scraped?: boolean;
+};
+
+export type PortfolioReactionListResponse = {
+  content: PortfolioReactionListItem[];
+  page?: number;
+  size?: number;
+  totalElements?: number;
+  totalPages?: number;
+  last?: boolean;
+  hasNext?: boolean;
+};
+
+export type PortfolioReactionListRawResponse =
+  | PortfolioReactionListResponse
+  | { data?: PortfolioReactionListResponse | PortfolioReactionListItem[] }
+  | PortfolioReactionListItem[];
+
+export async function togglePortfolioLike(slug: string) {
+  const normalizedSlug = normalizePortfolioSlug(slug);
+  if (!normalizedSlug) {
+    throw new Error("유효한 포트폴리오 슬러그가 없습니다.");
+  }
+
+  return apiFetch<PortfolioReactionResponse>(
+    `/api/portfolios/${encodeURIComponent(normalizedSlug)}/likes`,
+    {
+      method: "POST",
+      auth: true,
+    }
+  );
+}
+
+export async function togglePortfolioScrap(slug: string) {
+  const normalizedSlug = normalizePortfolioSlug(slug);
+  if (!normalizedSlug) {
+    throw new Error("유효한 포트폴리오 슬러그가 없습니다.");
+  }
+
+  return apiFetch<PortfolioReactionResponse>(
+    `/api/portfolios/${encodeURIComponent(normalizedSlug)}/scraps`,
+    {
+      method: "POST",
+      auth: true,
+    }
+  );
+}
+
+export async function getLikedPortfolios(params: URLSearchParams) {
+  return apiFetch<PortfolioReactionListRawResponse>(`/api/portfolios/likes?${params.toString()}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function getScrappedPortfolios(params: URLSearchParams) {
+  return apiFetch<PortfolioReactionListRawResponse>(`/api/portfolios/scraps?${params.toString()}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+/**
  * deletePortfolio
  * - 포트폴리오 삭제(인증 필요)
  */

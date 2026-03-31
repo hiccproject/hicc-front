@@ -41,10 +41,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Header from "@/components/Header";
 import ConfirmModal from "@/components/ConfirmModal";
 import styles from "./mypage.module.css";
 import { clearTokens } from "@/lib/auth/tokens";
+import { getLikedPortfolios } from "@/lib/api/cards";
 import {
   changeMemberPassword,
   deleteMemberAccount,
@@ -365,6 +367,23 @@ export default function MyPage() {
     }
   };
 
+  const warmupLikedPortfolioRequest = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set("page", "0");
+      params.set("size", "10");
+      await getLikedPortfolios(params);
+    } catch {
+      // 목록 페이지 진입은 계속 진행
+    }
+  };
+
+  const handleMoveToLikes = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    await warmupLikedPortfolioRequest();
+    router.push("/mypage/likes");
+  };
+
   return (
     <div className={styles.bg}>
       <div className={styles.headerWrap}>
@@ -407,6 +426,18 @@ export default function MyPage() {
 
             <h2 className={styles.userName}>{name}</h2>
             <p className={styles.userEmail}>{emailId}</p>
+            <div className={styles.listButtons}>
+              <Link
+                href="/mypage/likes"
+                className={`${styles.listButton} ${styles.likeListButton}`}
+                onClick={handleMoveToLikes}
+              >
+                좋아요 목록
+              </Link>
+              <Link href="/mypage/scraps" className={`${styles.listButton} ${styles.scrapListButton}`}>
+                스크랩 목록
+              </Link>
+            </div>
           </aside>
 
           {/* 본문: 개인정보/계정 관리 */}

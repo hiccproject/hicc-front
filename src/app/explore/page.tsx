@@ -5,11 +5,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { buildApiUrl } from "@/lib/api/config";
-import { getPublicPortfolioDetail } from "@/lib/api/cards";
+import {
+  getLikedPortfolios,
+  getPublicPortfolioDetail,
+  getScrappedPortfolios,
+  togglePortfolioLike,
+  togglePortfolioScrap,
+  type PortfolioReactionListItem as ReactionListItem,
+  type PortfolioReactionListRawResponse as ReactionListRawResponse,
+  type PortfolioReactionListResponse as ReactionListResponse,
+} from "@/lib/api/cards";
+import { getAccessToken } from "@/lib/auth/tokens";
 import styles from "./explore.module.css";
 
 const DEFAULT_PROFILE_IMG = "/default-avatar.png";
 const PAGE_SIZE = 12;
+const REACTION_PAGE_SIZE = 100;
+const REACTION_MAX_PAGES = 20;
 
 type SortKey = "LATEST" | "OLDEST" | "POPULAR" | "REALTIME";
 
@@ -25,6 +37,10 @@ type PortfolioListItem = {
   updatedAt: string;
   status?: "DRAFT" | "PUBLISHED";
   isPublic?: boolean;
+  likeCount?: number;
+  scrapCount?: number;
+  liked?: boolean;
+  scraped?: boolean;
 };
 
 type PortfolioListResponse = {
@@ -89,6 +105,62 @@ function truncateIntro(value: string, maxLength = 40) {
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}...` : trimmed;
 }
 
+function normalizeReactionListResponse(raw: ReactionListRawResponse): ReactionListResponse {
+  const payload = (
+    (raw as { data?: ReactionListResponse | ReactionListItem[] })?.data ?? raw
+  ) as ReactionListResponse | ReactionListItem[];
+
+  if (Array.isArray(payload)) {
+    return {
+      content: payload,
+      hasNext: false,
+      page: 1,
+      size: payload.length,
+      totalElements: payload.length,
+      totalPages: payload.length > 0 ? 1 : 0,
+      last: true,
+    };
+  }
+
+  const content = Array.isArray(payload.content) ? payload.content : [];
+  const hasNext =
+    typeof payload.hasNext === "boolean"
+      ? payload.hasNext
+      : typeof payload.last === "boolean"
+        ? !payload.last
+        : false;
+
+  return {
+    content,
+    hasNext,
+    page: typeof payload.page === "number" ? payload.page : 1,
+    size: typeof payload.size === "number" ? payload.size : REACTION_PAGE_SIZE,
+    totalElements: typeof payload.totalElements === "number" ? payload.totalElements : content.length,
+    totalPages: typeof payload.totalPages === "number" ? payload.totalPages : undefined,
+    last: typeof payload.last === "boolean" ? payload.last : !hasNext,
+  };
+}
+
+function extractApiMessage(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) return fallback;
+
+  const raw = error.message || "";
+  const jsonStart = raw.indexOf("{");
+  if (jsonStart >= 0) {
+    const maybeJson = raw.slice(jsonStart);
+    try {
+      const parsed = JSON.parse(maybeJson) as { message?: string };
+      if (typeof parsed.message === "string" && parsed.message.trim()) {
+        return parsed.message.trim();
+      }
+    } catch {
+      // no-op
+    }
+  }
+
+  return raw || fallback;
+}
+
 function HeartIcon({ active }: { active: boolean }) {
   const color = active ? ACTIVE_ICON_COLOR : INACTIVE_ICON_COLOR;
 
@@ -138,6 +210,7 @@ export default function ExplorePage() {
   const [sort, setSort] = useState<SortKey>("REALTIME");
   const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
   const [scrappedItems, setScrappedItems] = useState<Record<string, boolean>>({});
+  const [pendingReactions, setPendingReactions] = useState<Record<string, boolean>>({});
 
   const activeCategoryLabels = useMemo(() => {
     return CATEGORY_OPTIONS.filter((option) => selectedCategories.includes(option.value)).map(
@@ -206,6 +279,144 @@ export default function ExplorePage() {
     fetchPage(page);
   }, [page, fetchPage]);
 
+  const fetchReactionSlugSet = useCallback(
+    async (reactionType: "likes" | "scraps", targetSlugs: Set<string>) => {
+      if (targetSlugs.size === 0) return new Set<string>();
+
+      const fetchByStartPage = async (startPage: number) => {
+        const unresolved = new Set(targetSlugs);
+        const matched = new Set<string>();
+        let pageNumber = startPage;
+        let pageCount = 0;
+
+        while (pageCount < REACTION_MAX_PAGES && unresolved.size > 0) {
+          const params = new URLSearchParams();
+          params.set("page", String(pageNumber));
+          params.set("size", String(REACTION_PAGE_SIZE));
+
+          const raw =
+            reactionType === "likes"
+              ? await getLikedPortfolios(params)
+              : await getScrappedPortfolios(params);
+          const normalized = normalizeReactionListResponse(raw);
+
+          normalized.content.forEach((item) => {
+            const slug = item.slug?.trim();
+            if (!slug || !unresolved.has(slug)) return;
+            unresolved.delete(slug);
+            matched.add(slug);
+          });
+
+          const isLastPage =
+            typeof normalized.last === "boolean"
+              ? normalized.last
+              : typeof normalized.hasNext === "boolean"
+                ? !normalized.hasNext
+                : false;
+
+          if (isLastPage) break;
+
+          pageNumber += 1;
+          pageCount += 1;
+        }
+
+        return matched;
+      };
+
+      const [zeroBasedResult, oneBasedResult] = await Promise.allSettled([
+        fetchByStartPage(0),
+        fetchByStartPage(1),
+      ]);
+
+      const merged = new Set<string>();
+
+      if (zeroBasedResult.status === "fulfilled") {
+        zeroBasedResult.value.forEach((slug) => merged.add(slug));
+      }
+      if (oneBasedResult.status === "fulfilled") {
+        oneBasedResult.value.forEach((slug) => merged.add(slug));
+      }
+
+      if (zeroBasedResult.status === "rejected" && oneBasedResult.status === "rejected") {
+        throw zeroBasedResult.reason ?? oneBasedResult.reason;
+      }
+
+      return merged;
+    },
+    []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncReactionStates = async () => {
+      if (!getAccessToken()) {
+        if (!cancelled) {
+          setLikedItems({});
+          setScrappedItems({});
+        }
+        return;
+      }
+
+      const visibleSlugSet = new Set(
+        items.map((item) => item.slug?.trim() ?? "").filter((slug) => slug.length > 0)
+      );
+
+      if (visibleSlugSet.size === 0) {
+        if (!cancelled) {
+          setLikedItems({});
+          setScrappedItems({});
+        }
+        return;
+      }
+
+      const [likedResult, scrappedResult] = await Promise.allSettled([
+        fetchReactionSlugSet("likes", visibleSlugSet),
+        fetchReactionSlugSet("scraps", visibleSlugSet),
+      ]);
+
+      if (cancelled) return;
+
+      if (likedResult.status === "rejected") {
+        console.warn("Failed to sync like states:", likedResult.reason);
+      }
+      if (scrappedResult.status === "rejected") {
+        console.warn("Failed to sync scrap states:", scrappedResult.reason);
+      }
+
+      const likedSlugSet =
+        likedResult.status === "fulfilled" ? likedResult.value : new Set<string>();
+      const scrappedSlugSet =
+        scrappedResult.status === "fulfilled" ? scrappedResult.value : new Set<string>();
+
+      const nextLiked: Record<string, boolean> = {};
+      const nextScrapped: Record<string, boolean> = {};
+
+      items.forEach((item, index) => {
+        const key = item.slug ?? `empty-${index}`;
+        const normalizedSlug = item.slug?.trim();
+
+        if (!normalizedSlug) {
+          nextLiked[key] = false;
+          nextScrapped[key] = false;
+          return;
+        }
+
+        nextLiked[key] = likedSlugSet.has(normalizedSlug);
+        nextScrapped[key] = scrappedSlugSet.has(normalizedSlug);
+      });
+
+      setLikedItems(nextLiked);
+      setScrappedItems(nextScrapped);
+    };
+
+    syncReactionStates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items, fetchReactionSlugSet]);
+
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
@@ -268,14 +479,72 @@ export default function ExplorePage() {
     };
   }, [page, totalPages]);
 
-  const toggleReaction = (
+  const handleToggleLike = async (
     event: React.MouseEvent<HTMLButtonElement>,
-    key: string,
-    setter: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
+    slug: string | null,
+    key: string
   ) => {
     event.preventDefault();
     event.stopPropagation();
-    setter((prev) => ({ ...prev, [key]: !prev[key] }));
+
+    if (!slug || pendingReactions[key]) return;
+
+    setPendingReactions((prev) => ({ ...prev, [key]: true }));
+    try {
+      const response = await togglePortfolioLike(slug);
+      const reaction = response?.data;
+      if (typeof reaction?.liked === "boolean") {
+        setLikedItems((prev) => ({ ...prev, [key]: reaction.liked }));
+      } else {
+        setLikedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+      }
+
+      if (typeof reaction?.scraped === "boolean") {
+        setScrappedItems((prev) => ({ ...prev, [key]: reaction.scraped }));
+      }
+    } catch (reactionError) {
+      alert(extractApiMessage(reactionError, "좋아요 처리에 실패했습니다."));
+    } finally {
+      setPendingReactions((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const handleToggleScrap = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+    slug: string | null,
+    key: string
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!slug || pendingReactions[key]) return;
+
+    setPendingReactions((prev) => ({ ...prev, [key]: true }));
+    try {
+      const response = await togglePortfolioScrap(slug);
+      const reaction = response?.data;
+      if (typeof reaction?.scraped === "boolean") {
+        setScrappedItems((prev) => ({ ...prev, [key]: reaction.scraped }));
+      } else {
+        setScrappedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+      }
+
+      if (typeof reaction?.liked === "boolean") {
+        setLikedItems((prev) => ({ ...prev, [key]: reaction.liked }));
+      }
+    } catch (reactionError) {
+      alert(extractApiMessage(reactionError, "스크랩 처리에 실패했습니다."));
+    } finally {
+      setPendingReactions((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
   };
 
   return (
@@ -359,6 +628,7 @@ export default function ExplorePage() {
             const actionKey = item.slug ?? `empty-${index}`;
             const isLiked = Boolean(likedItems[actionKey]);
             const isScrapped = Boolean(scrappedItems[actionKey]);
+            const isReactionPending = Boolean(pendingReactions[actionKey]);
             const cardActions = (
               <div className={styles.cardActions}>
                 <button
@@ -366,7 +636,8 @@ export default function ExplorePage() {
                   className={`${styles.actionButton} ${isLiked ? styles.actionButtonActive : ""}`}
                   aria-label={isLiked ? "좋아요 취소" : "좋아요"}
                   aria-pressed={isLiked}
-                  onClick={(event) => toggleReaction(event, actionKey, setLikedItems)}
+                  disabled={isReactionPending || !item.slug}
+                  onClick={(event) => handleToggleLike(event, item.slug, actionKey)}
                 >
                   <HeartIcon active={isLiked} />
                 </button>
@@ -375,7 +646,8 @@ export default function ExplorePage() {
                   className={`${styles.actionButton} ${isScrapped ? styles.actionButtonActive : ""}`}
                   aria-label={isScrapped ? "스크랩 취소" : "스크랩"}
                   aria-pressed={isScrapped}
-                  onClick={(event) => toggleReaction(event, actionKey, setScrappedItems)}
+                  disabled={isReactionPending || !item.slug}
+                  onClick={(event) => handleToggleScrap(event, item.slug, actionKey)}
                 >
                   <BookmarkIcon active={isScrapped} />
                 </button>
